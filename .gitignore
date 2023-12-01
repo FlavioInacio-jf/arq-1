@@ -1,1 +1,5 @@
 main
+*.hex
+*.out
+*.json
+bin

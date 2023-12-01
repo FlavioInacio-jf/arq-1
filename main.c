@@ -17,12 +17,20 @@
  *******************************************************/
 
 // Load memory vector from a file
-void loadMemory(char *filename, uint8_t *mem8, uint8_t *mem32);
+void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32);
 
 // Principal function
 int main(int argc, char *argv[])
 {
+  // Input file
+  FILE *input = fopen(argv[1], "r");
+  if (input == NULL)
+  {
+    perror("Failed to load input file");
+    exit(EXIT_FAILURE);
+  }
 
+  // Output file
   const FILE *output = fopen(argv[2], "w");
 
   // 32 registers initialized to zero
@@ -32,6 +40,8 @@ int main(int argc, char *argv[])
   uint8_t *mem8 = (uint8_t *)(calloc(SIZE_MEMORY, 1024));
   uint32_t *mem32 = (uint32_t *)(calloc(SIZE_MEMORY, 1024));
 
+  loadMemory(input, mem8, mem32);
+
   return 0;
 }
 
@@ -39,32 +49,20 @@ int main(int argc, char *argv[])
  * Utility Functions
  *******************************************************/
 
-void loadMemory(char *filename, uint8_t *mem8, uint8_t *mem32)
+void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32)
 {
-  FILE *input = fopen(filename, "r");
-  if (input == NULL)
-  {
-    perror("Failed to load input file");
-    exit(EXIT_FAILURE);
-  }
 
   fseek(input, 0, SEEK_SET);
 
   unsigned int count = 0;
-  while (!feof(input))
-  {
-    if (fscanf(input, "0x%08X", &mem32[count]) == 1)
-    {
-      for (int i = count; i < count * 2; i++)
-      {
-        mem8[count] = mem32[count] >> (24 - (abs(i - count)) * 8);
-      }
-    }
-    else
-    {
-      fprintf(stderr, "The instruction is not in hexadecimal");
-    }
+  char hexString[32];
 
+  while (fgets(hexString, sizeof(hexString), input) != NULL)
+  {
+    unsigned int hexCode = strtoul(hexString, NULL, 16);
+    mem32[count] = hexCode;
+
+    printf("%d: 0x%08X\n", count, mem32[count]);
     count += 1;
   }
 
