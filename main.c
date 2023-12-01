@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
 
   loadMemory(input, mem8, mem32);
 
+  fclose(input);
   return 0;
 }
 
@@ -55,16 +56,18 @@ void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32)
   fseek(input, 0, SEEK_SET);
 
   unsigned int count = 0;
-  char hexString[32];
+  char hexString[SIZE_MEMORY];
 
   while (fgets(hexString, sizeof(hexString), input) != NULL)
   {
-    unsigned int hexCode = strtoul(hexString, NULL, 16);
+    uint32_t hexCode = strtoul(hexString, NULL, 16);
     mem32[count] = hexCode;
 
-    printf("%d: 0x%08X\n", count, mem32[count]);
+    mem8[count] = (hexCode & 0xFF000000) >> 24;
+    mem8[count + 1] = (hexCode & 0x00FF0000) >> 16;
+    mem8[count + 2] = (hexCode & 0x0000FF00) >> 8;
+    mem8[count + 3] = (hexCode & 0x000000FF);
+
     count += 1;
   }
-
-  fclose(input);
 }
