@@ -29,10 +29,13 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
 void mov(uint32_t registers[NUM_REGISTERS], char instruction[30]);
 
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bzd(uint32_t registers[NUM_REGISTERS], FILE *output);
 void interger(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output);
 
 void l8(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32);
 void l32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32);
+
+int isZDSet(uint32_t registers[NUM_REGISTERS]);
 
 // Principal function
 int main(int argc, char *argv[])
@@ -128,12 +131,17 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
     case 0b011010: // l32
       l32(registers, instrucao, mem8, mem32);
       break;
+
     case 0b110111: // bun
       bun(registers, output);
+      break;
+    case 0b111000: // bzd
+      bzd(registers, output);
       break;
     case 0b111111: // int
       interger(registers, &executa, output);
       break;
+
     default: // Instrucao desconhecida
       printf("Instrucao desconhecida!\n");
       // Parar a execucao
@@ -182,12 +190,36 @@ void bun(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Fetch operands
   const uint32_t label = registers[IR] & 0x03FFFFFF;
 
+  // Instruction formatting
+  sprintf(instruction, "bun %i", label);
+
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   registers[PC] = registers[PC] + (label << 2);
 
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+}
+
+void bzd(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
   // Instruction formatting
   sprintf(instruction, "bun %i", label);
+
+  // Execution of behavior
+  const uint32_t oldPC = registers[PC];
+  if (isZDSet(registers))
+  {
+    registers[PC] = registers[PC] + (label << 2);
+  }
 
   // Screen output formatting
   printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
@@ -200,12 +232,12 @@ void interger(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output)
 {
   char instruction[30] = {0};
 
+  // Instruction formatting
+  sprintf(instruction, "int 0");
+
   // Execution of behavior
   (*executa) = 0;
   memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
-
-  // Instruction formatting
-  sprintf(instruction, "int 0");
 
   // Screen output formatting
   printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", registers[PC], instruction);
@@ -248,4 +280,38 @@ void l32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8,
   sprintf(instruction, "l32 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
   // Formatacao de saida em tela (deve mudar para o arquivo de saida)
   printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, (registers[x] + i) << 2, registers[z]);
+}
+
+/******************************************************
+ * Fetch from the status register(SR)
+ *******************************************************/
+
+int isCYSet(uint32_t registers[NUM_REGISTERS])
+{
+  return (registers[SR] && 0x00000001) != 0;
+}
+
+int isIVSet(uint32_t registers[NUM_REGISTERS])
+{
+  return (registers[SR] && 0x00000004) != 0;
+}
+
+int isOVSet(uint32_t registers[NUM_REGISTERS])
+{
+  return (registers[SR] && 0x00000008) != 0;
+}
+
+int isSNSet(uint32_t registers[NUM_REGISTERS])
+{
+  return (registers[SR] && 0x00000010) != 0;
+}
+
+int isZDSet(uint32_t registers[NUM_REGISTERS])
+{
+  return (registers[SR] && 0x00000020) != 0;
+}
+
+int isZNSet(uint32_t registers[NUM_REGISTERS])
+{
+  return (registers[SR] && 0x00000040) != 0;
 }
