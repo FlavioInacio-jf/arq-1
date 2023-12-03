@@ -5,6 +5,7 @@
 #include <stdint.h> // Integer types with specific widths.
 #include <stdlib.h> // General-purpose functions, including memory allocation and random number generation.
 #include <stdio.h>  // Standard Input/Output library for input and output operations.
+#include <string.h>
 
 /******************************************************
  * Utility Constants
@@ -201,6 +202,7 @@ void interger(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output)
 
   // Execution of behavior
   (*executa) = 0;
+  memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
 
   // Instruction formatting
   sprintf(instruction, "int 0");
