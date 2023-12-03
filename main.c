@@ -30,12 +30,17 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output);
 
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output);
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output);
-void interger(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output);
+void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output);
 
 void l8(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32);
 void l32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32);
 
+int isZNSet(uint32_t registers[NUM_REGISTERS]);
 int isZDSet(uint32_t registers[NUM_REGISTERS]);
+int isSNSet(uint32_t registers[NUM_REGISTERS]);
+int isOVSet(uint32_t registers[NUM_REGISTERS]);
+int isIVSet(uint32_t registers[NUM_REGISTERS]);
+int isCYSet(uint32_t registers[NUM_REGISTERS]);
 
 // Principal function
 int main(int argc, char *argv[])
@@ -139,7 +144,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
       bzd(registers, output);
       break;
     case 0b111111: // int
-      interger(registers, &executa, output);
+      interrupt(registers, &executa, output);
       break;
 
     default: // Instrucao desconhecida
@@ -162,6 +167,26 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
  * Arithmetic and logical operations
  *******************************************************/
 
+void add(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint8_t z = 0;
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint8_t z = 0;
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
 void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
@@ -172,8 +197,6 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Fetch operands
   z = (registers[IR] & 0x03E00000) >> 21;
   xyl = registers[IR] & 0x1FFFFF;
-
-  printf("R%u\n", z);
 
   // Execution of behavior
   registers[z] = xyl;
@@ -188,11 +211,260 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
   fprintf(output, "0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
 }
 
+void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint8_t z = 0;
+  uint32_t xyl = 0;
+
+  // Fetch operands
+  z = (registers[IR] & 0x03E00000) >> 21;
+  xyl = registers[IR] & 0x1FFFFF;
+
+  // Falta fazer
+}
+
+void and (uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint8_t z = 0;
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void or (uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint8_t z = 0;
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void not(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint8_t z = 0;
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
+  char instruction[30] = {0};
+
+  uint8_t z = 0;
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+    void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void sll(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void srl(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void div(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void divs(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void mul(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void muls(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
 /******************************************************
  * Flow Control Operations
  *******************************************************/
 
-void bun(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bae(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void bat(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void bbe(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void bbt(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void beq(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void bge(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void bgt(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void biv(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
@@ -200,17 +472,70 @@ void bun(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint32_t label = registers[IR] & 0x03FFFFFF;
 
   // Instruction formatting
-  sprintf(instruction, "bun %i", label);
+  sprintf(instruction, "biv %i", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
-  registers[PC] = registers[PC] + (label << 2);
+  if (isIVSet(registers))
+  {
+    registers[PC] = registers[PC] + (label << 2);
+  }
 
   // Screen output formatting
   printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
 
   // Output formatting to file
   fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+}
+
+void ble(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void blt(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void bne(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void bni(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
+}
+
+void bnz(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Falta fazer
 }
 
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output)
@@ -237,7 +562,28 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output)
   fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
 }
 
-void interger(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output)
+void bun(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Fetch operands
+  const uint32_t label = registers[IR] & 0x03FFFFFF;
+
+  // Instruction formatting
+  sprintf(instruction, "bun %i", label);
+
+  // Execution of behavior
+  const uint32_t oldPC = registers[PC];
+  registers[PC] = registers[PC] + (label << 2);
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+}
+
+void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output)
 {
   char instruction[30] = {0};
 
@@ -273,6 +619,13 @@ void l8(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, 
   sprintf(instruction, "l8 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
   // Formatacao de saida em tela (deve mudar para o arquivo de saida)
   printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%02X\n", registers[PC], instruction, z, registers[x] + i, registers[z]);
+}
+
+void l16(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
+{
+  uint8_t z = 0, x = 0, i = 0;
+
+  // Falta fazer
 }
 
 void l32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
