@@ -26,7 +26,7 @@
 void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32); // Load memory vector from a file
 void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32, FILE *output);
 
-void mov(uint32_t registers[NUM_REGISTERS], char instruction[30]);
+void mov(uint32_t registers[NUM_REGISTERS], FILE *output);
 
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output);
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output);
@@ -123,7 +123,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
     {
 
     case 0b000000: // mov
-      mov(registers, instrucao);
+      mov(registers, output);
       break;
     case 0b011000: // l8
       l8(registers, instrucao, mem8, mem32);
@@ -162,21 +162,30 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
  * Arithmetic and logical operations
  *******************************************************/
 
-void mov(uint32_t registers[NUM_REGISTERS], char instruction[30])
+void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
+  char instruction[30] = {0};
+
   uint8_t z = 0;
   uint32_t xyl = 0;
 
-  // Obtendo operandos
-  z = (registers[IR] & (0b11111 << 21)) >> 21;
+  // Fetch operands
+  z = (registers[IR] & 0x03E00000) >> 21;
   xyl = registers[IR] & 0x1FFFFF;
 
-  // Execucao do comportamento
+  printf("R%u\n", z);
+
+  // Execution of behavior
   registers[z] = xyl;
-  // Formatacao da instrucao
+
+  // Instruction formatting
   sprintf(instruction, "mov r%u,%u", z, xyl);
-  // Formatacao de saida em tela (deve mudar para o arquivo de saida)
+
+  // Screen output formatting
   printf("0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
 }
 
 /******************************************************
