@@ -23,12 +23,12 @@
  *******************************************************/
 
 void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32); // Load memory vector from a file
-void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
+void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32, FILE *output);
 
 void mov(uint32_t registers[NUM_REGISTERS], char instruction[30]);
 
-void bun(uint32_t registers[NUM_REGISTERS]);
-void interger(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *executa);
+void bun(uint32_t registers[NUM_REGISTERS], FILE *output);
+void interger(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output);
 
 void l8(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32);
 void l32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32);
@@ -45,7 +45,12 @@ int main(int argc, char *argv[])
   }
 
   // Output file
-  const FILE *output = fopen(argv[2], "w");
+  FILE *output = fopen(argv[2], "w");
+  if (output == NULL)
+  {
+    perror("Failed to load output file");
+    exit(EXIT_FAILURE);
+  }
 
   // 32 registers initialized to zero
   uint32_t registers[NUM_REGISTERS] = {0};
@@ -55,9 +60,10 @@ int main(int argc, char *argv[])
   uint32_t *mem32 = (uint32_t *)(calloc(NUM_REGISTERS, 1024));
 
   loadMemory(input, mem8, mem32);
-  decodeInstructions(registers, mem8, mem32);
+  decodeInstructions(registers, mem8, mem32, output);
 
   fclose(input);
+  fclose(output);
   return 0;
 }
 
@@ -87,13 +93,17 @@ void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32)
   }
 }
 
-void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
+void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32, FILE *output)
 {
   printf("\nMEM8:\n");
   for (uint8_t i = 0; i < 48; i = i + 4)
     printf("0x%08X: 0x%02X 0x%02X 0x%02X 0x%02X\n", i, mem8[i], mem8[i + 1], mem8[i + 2], mem8[i + 3]);
 
   printf("\nSaida esperada\n\n      |       \n      V       \n\n");
+
+  // Output formatting to file
+  fprintf(output, "[START OF SIMULATION]\n");
+
   printf("[START OF SIMULATION]\n");
 
   uint8_t executa = 1;
@@ -116,13 +126,12 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
       break;
     case 0b011010: // l32
       l32(registers, instrucao, mem8, mem32);
-      ;
       break;
     case 0b110111: // bun
-      bun(registers);
+      bun(registers, output);
       break;
     case 0b111111: // int
-      interger(registers, instrucao, &executa);
+      interger(registers, &executa, output);
       break;
     default: // Instrucao desconhecida
       printf("Instrucao desconhecida!\n");
@@ -133,6 +142,9 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
     registers[PC] = registers[PC] + 4;
     // Exibindo a finalizacao da execucao
   }
+
+  // Output formatting to file
+  fprintf(output, "[END OF SIMULATION]\n");
 
   printf("[END OF SIMULATION]\n");
 }
@@ -162,7 +174,7 @@ void mov(uint32_t registers[NUM_REGISTERS], char instruction[30])
  * Flow Control Operations
  *******************************************************/
 
-void bun(uint32_t registers[NUM_REGISTERS])
+void bun(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
@@ -180,16 +192,24 @@ void bun(uint32_t registers[NUM_REGISTERS])
   printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
 
   // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
 }
 
-void interger(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *executa)
+void interger(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output)
 {
-  // Parar a execucao
+  char instruction[30] = {0};
+
+  // Execution of behavior
   (*executa) = 0;
-  // Formatacao da instrucao
+
+  // Instruction formatting
   sprintf(instruction, "int 0");
-  // Formatacao de saida em tela (deve mudar para o arquivo de saida)
+
+  // Screen output formatting
   printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", registers[PC], instruction);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", registers[PC], instruction);
 }
 
 /******************************************************
