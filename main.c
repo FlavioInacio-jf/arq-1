@@ -521,7 +521,21 @@ void bge(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Fetch operands
   const uint32_t label = registers[IR] & 0x03FFFFFF;
 
-  // Falta fazer
+  // Instruction formatting
+  sprintf(instruction, "bge %i", label);
+
+  // Execution of behavior
+  const uint32_t oldPC = registers[PC];
+  if (isSNSet(registers) == isOVSet(registers))
+  {
+    registers[PC] = registers[PC] + (label << 2);
+  }
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
 }
 
 void bgt(uint32_t registers[NUM_REGISTERS], FILE *output)
