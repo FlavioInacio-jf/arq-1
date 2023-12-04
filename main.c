@@ -560,7 +560,7 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint32_t label = registers[IR] & 0x03FFFFFF;
 
   // Instruction formatting
-  sprintf(instruction, "bun %i", label);
+  sprintf(instruction, "bzd %i", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
