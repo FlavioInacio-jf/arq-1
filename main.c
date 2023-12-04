@@ -812,6 +812,29 @@ void l32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8,
   printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, (registers[x] + i) << 2, registers[z]);
 }
 
+void s8(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
+{
+  uint8_t z = 0, x = 0, i = 0;
+
+  // Falta fazer
+}
+
+void s16(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
+{
+  uint8_t z = 0, x = 0, i = 0;
+
+  // Falta fazer
+}
+
+void s32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
+{
+  uint8_t z = 0, x = 0, i = 0;
+
+  // Falta fazer
+}
+
+
+
 /******************************************************
  * Fetch from the status register(SR)
  *******************************************************/
