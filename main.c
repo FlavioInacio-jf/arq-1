@@ -563,7 +563,21 @@ void bnz(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Fetch operands
   const uint32_t label = registers[IR] & 0x03FFFFFF;
 
-  // Falta fazer
+  // Instruction formatting
+  sprintf(instruction, "bnz %i", label);
+
+  // Execution of behavior
+  const uint32_t oldPC = registers[PC];
+  if (!isZDSet(registers))
+  {
+    registers[PC] = registers[PC] + (label << 2);
+  }
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
 }
 
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output)
