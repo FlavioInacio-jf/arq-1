@@ -130,9 +130,9 @@ void loadMemory(FILE *input, uint8_t *mem8)
   fseek(input, 0, SEEK_SET);
 
   unsigned int count = 0;
-  char hexString[NUM_REGISTERS];
+  char hexString[32];
 
-  while (fgets(hexString, sizeof(hexString), input) != NULL)
+  while (fgets(hexString, sizeof(char) * 32, input) != NULL)
   {
     uint32_t hexCode = strtoul(hexString, NULL, 16);
 
@@ -141,18 +141,12 @@ void loadMemory(FILE *input, uint8_t *mem8)
     mem8[count + 2] = (hexCode & 0x0000FF00) >> 8;
     mem8[count + 3] = (hexCode & 0x000000FF);
 
-    count += 1;
+    count += 4;
   }
 }
 
 void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
-  printf("\nMEM8:\n");
-  for (uint8_t i = 0; i < 48; i = i + 4)
-    printf("0x%08X: 0x%02X 0x%02X 0x%02X 0x%02X\n", i, mem8[i], mem8[i + 1], mem8[i + 2], mem8[i + 3]);
-
-  printf("\nSaida esperada\n\n      |       \n      V       \n\n");
-
   // Output formatting to file
   fprintf(output, "[START OF SIMULATION]\n");
 
@@ -167,6 +161,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
                      (mem8[registers[PC] + 3] << 0));
 
     uint8_t opcode = (registers[IR] >> 26) & 0x3F;
+
     switch (opcode)
     {
 
@@ -924,14 +919,15 @@ void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output
   sprintf(instruction, "int 0");
 
   // Execution of behavior
+  const uint32_t oldPC = registers[PC];
   (*executa) = 0;
   memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", registers[PC], instruction);
+  printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", oldPC, instruction);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", registers[PC], instruction);
+  fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", oldPC, instruction);
 }
 
 /******************************************************
