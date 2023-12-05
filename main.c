@@ -52,6 +52,12 @@ void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
 void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
 void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
 
+void callf(uint32_t registers[NUM_REGISTERS], FILE *output);
+void calls(uint32_t registers[NUM_REGISTERS], FILE *output);
+void ret(uint32_t registers[NUM_REGISTERS], FILE *output);
+void push(uint32_t registers[NUM_REGISTERS], FILE *output);
+void pop(uint32_t registers[NUM_REGISTERS], FILE *output);
+
 int isZNSet(uint32_t registers[NUM_REGISTERS]);
 int isZDSet(uint32_t registers[NUM_REGISTERS]);
 int isSNSet(uint32_t registers[NUM_REGISTERS]);
@@ -214,6 +220,22 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
       break;
     case 0b111111: // int
       interrupt(registers, &executa, output);
+      break;
+
+    case 0b011110: // call type F
+      callf(registers, output);
+      break;
+    case 0b111001: // call type S
+      calls(registers, output);
+      break;
+    case 0b011111: // ret
+      ret(registers, output);
+      break;
+    case 0b001010: // push
+      push(registers, output);
+      break;
+    case 0b001011: // pop
+      pop(registers, output);
       break;
 
     default: // Instrucao desconhecida
