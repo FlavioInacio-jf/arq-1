@@ -28,8 +28,21 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
 
 void mov(uint32_t registers[NUM_REGISTERS], FILE *output);
 
-void bun(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bae(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bat(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bbe(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bbt(uint32_t registers[NUM_REGISTERS], FILE *output);
+void beq(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bge(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bgt(uint32_t registers[NUM_REGISTERS], FILE *output);
+void biv(uint32_t registers[NUM_REGISTERS], FILE *output);
+void ble(uint32_t registers[NUM_REGISTERS], FILE *output);
+void blt(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bne(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bni(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bnz(uint32_t registers[NUM_REGISTERS], FILE *output);
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bun(uint32_t registers[NUM_REGISTERS], FILE *output);
 void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output);
 
 void l8(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32);
@@ -137,6 +150,45 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
       l32(registers, instrucao, mem8, mem32);
       break;
 
+    case 0b101010: // bae
+      bae(registers, output);
+      break;
+    case 0b101011: // bat
+      bat(registers, output);
+      break;
+    case 0b101100: // bbe
+      bbe(registers, output);
+      break;
+    case 0b101101: // bbt
+      bbt(registers, output);
+      break;
+    case 0b101110: // beq
+      beq(registers, output);
+      break;
+    case 0b101111: // bge
+      bge(registers, output);
+      break;
+    case 0b110000: // bgt
+      bgt(registers, output);
+      break;
+    case 0b110001: // biv
+      biv(registers, output);
+      break;
+    case 0b110010: // ble
+      ble(registers, output);
+      break;
+    case 0b110011: // blt
+      blt(registers, output);
+      break;
+    case 0b110100: // bne
+      bne(registers, output);
+      break;
+    case 0b110101: // bni
+      bni(registers, output);
+      break;
+    case 0b110110: // bnz
+      bnz(registers, output);
+      break;
     case 0b110111: // bun
       bun(registers, output);
       break;
@@ -832,8 +884,6 @@ void s32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8,
 
   // Falta fazer
 }
-
-
 
 /******************************************************
  * Fetch from the status register(SR)
