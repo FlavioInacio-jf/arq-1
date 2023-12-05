@@ -178,7 +178,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
       sub(registers, output);
       break;
     case 0b000100: // mul, sll, muls, sla, div, srl, divs, sra
-      mul(registers, output);
+      // mul(registers, output);
       break;
     case 0b000101: // cmp
       cmp(registers, output);
@@ -333,13 +333,29 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
   registers[z] = xyl;
 
   // Instruction formatting
-  sprintf(instruction, "mov r%u,%u", z, xyl);
+  switch (z)
+  {
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
+  case SP:
+    sprintf(instruction, "mov sp,%u", xyl);
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
+    // Screen output formatting
+    printf("0x%08X:\t%-25s\tSP=0x%08X\n", registers[PC], instruction, xyl);
+
+    // Output formatting to file
+    fprintf(output, "0x%08X:\t%-25s\tSP=0x%08X\n", registers[PC], instruction, xyl);
+
+    break;
+
+  default:
+    sprintf(instruction, "mov r%u,%u", z, xyl);
+
+    // Screen output formatting
+    printf("0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
+
+    // Output formatting to file
+    fprintf(output, "0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
+  }
 }
 
 void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
