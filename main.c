@@ -846,25 +846,25 @@ int isCYSet(uint32_t registers[NUM_REGISTERS])
 
 int isIVSet(uint32_t registers[NUM_REGISTERS])
 {
-  return (registers[SR] && 0x00000004) != 0;
+  return ((registers[SR] && 0x00000004) >> 2) != 0;
 }
 
 int isOVSet(uint32_t registers[NUM_REGISTERS])
 {
-  return (registers[SR] && 0x00000008) != 0;
+  return ((registers[SR] && 0x00000008) >> 3) != 0;
 }
 
 int isSNSet(uint32_t registers[NUM_REGISTERS])
 {
-  return (registers[SR] && 0x00000010) != 0;
+  return ((registers[SR] && 0x00000010) >> 4) != 0;
 }
 
 int isZDSet(uint32_t registers[NUM_REGISTERS])
 {
-  return (registers[SR] && 0x00000020) != 0;
+  return ((registers[SR] && 0x00000020) >> 5) != 0;
 }
 
 int isZNSet(uint32_t registers[NUM_REGISTERS])
 {
-  return (registers[SR] && 0x00000040) != 0;
+  return ((registers[SR] && 0x00000040) >> 6) != 0;
 }
