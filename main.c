@@ -160,11 +160,10 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
                      (mem8[registers[PC] + 2] << 8) |
                      (mem8[registers[PC] + 3] << 0));
 
-    uint8_t opcode = (registers[IR] >> 26) & 0x3F;
+    const uint8_t opcode = (registers[IR] >> 26) & 0x3F;
 
     switch (opcode)
     {
-
     case 0b000000: // mov
       mov(registers, output);
       break;
@@ -178,7 +177,35 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
       sub(registers, output);
       break;
     case 0b000100: // mul, sll, muls, sla, div, srl, divs, sra
-      // mul(registers, output);
+      const uint8_t subOpcode = (registers[IR] >> 7) & 0x7;
+
+      switch (subOpcode)
+      {
+      case 0b000: // mul
+        mul(registers, output);
+        break;
+      case 0b001: // sll
+        sll(registers, output);
+        break;
+      case 0b010: // muls
+        muls(registers, output);
+        break;
+      case 0b011: // sla
+        sla(registers, output);
+        break;
+      case 0b100: // div
+        divv(registers, output);
+        break;
+      case 0b101: // srl
+        srl(registers, output);
+        break;
+      case 0b110: // divs
+        divs(registers, output);
+        break;
+      case 0b111: // sra
+        sra(registers, output);
+        break;
+      }
       break;
     case 0b000101: // cmp
       cmp(registers, output);
@@ -322,12 +349,9 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
-  uint8_t z = 0;
-  uint32_t xyl = 0;
-
   // Fetch operands
-  z = (registers[IR] & 0x03E00000) >> 21;
-  xyl = registers[IR] & 0x1FFFFF;
+  const uint8_t z = (registers[IR] & 0x03E00000) >> 21;
+  const uint32_t xyl = registers[IR] & 0x1FFFFF;
 
   // Execution of behavior
   registers[z] = xyl;
@@ -344,7 +368,6 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
 
     // Output formatting to file
     fprintf(output, "0x%08X:\t%-25s\tSP=0x%08X\n", registers[PC], instruction, xyl);
-
     break;
 
   default:
