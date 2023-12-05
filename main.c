@@ -23,8 +23,8 @@
  * Functin Signature
  *******************************************************/
 
-void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32); // Load memory vector from a file
-void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32, FILE *output);
+void loadMemory(FILE *input, uint8_t *mem8); // Load memory vector from a file
+void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 
 void mov(uint32_t registers[NUM_REGISTERS], FILE *output);
 void movs(uint32_t registers[NUM_REGISTERS], FILE *output);
@@ -34,7 +34,7 @@ void mul(uint32_t registers[NUM_REGISTERS], FILE *output);
 void sll(uint32_t registers[NUM_REGISTERS], FILE *output);
 void muls(uint32_t registers[NUM_REGISTERS], FILE *output);
 void sla(uint32_t registers[NUM_REGISTERS], FILE *output);
-void div(uint32_t registers[NUM_REGISTERS], FILE *output);
+void divv(uint32_t registers[NUM_REGISTERS], FILE *output);
 void srl(uint32_t registers[NUM_REGISTERS], FILE *output);
 void divs(uint32_t registers[NUM_REGISTERS], FILE *output);
 void sra(uint32_t registers[NUM_REGISTERS], FILE *output);
@@ -67,12 +67,12 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output);
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output);
 void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output);
 
-void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
-void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
-void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
-void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
-void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
-void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
+void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 
 void callf(uint32_t registers[NUM_REGISTERS], FILE *output);
 void calls(uint32_t registers[NUM_REGISTERS], FILE *output);
@@ -111,10 +111,9 @@ int main(int argc, char *argv[])
 
   // 32 KiB memory initialized to zero
   uint8_t *mem8 = (uint8_t *)(calloc(NUM_REGISTERS, 1024));
-  uint32_t *mem32 = (uint32_t *)(calloc(NUM_REGISTERS, 1024));
 
-  loadMemory(input, mem8, mem32);
-  decodeInstructions(registers, mem8, mem32, output);
+  loadMemory(input, mem8);
+  decodeInstructions(registers, mem8, output);
 
   fclose(input);
   fclose(output);
@@ -125,7 +124,7 @@ int main(int argc, char *argv[])
  * Utility Functions
  *******************************************************/
 
-void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32)
+void loadMemory(FILE *input, uint8_t *mem8)
 {
 
   fseek(input, 0, SEEK_SET);
@@ -136,7 +135,6 @@ void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32)
   while (fgets(hexString, sizeof(hexString), input) != NULL)
   {
     uint32_t hexCode = strtoul(hexString, NULL, 16);
-    mem32[count] = hexCode;
 
     mem8[count] = (hexCode & 0xFF000000) >> 24;
     mem8[count + 1] = (hexCode & 0x00FF0000) >> 16;
@@ -147,7 +145,7 @@ void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32)
   }
 }
 
-void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32, FILE *output)
+void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   printf("\nMEM8:\n");
   for (uint8_t i = 0; i < 48; i = i + 4)
@@ -163,10 +161,10 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
   uint8_t executa = 1;
   while (executa)
   {
-    char instrucao[30] = {0};
-    uint32_t pc = 0, xyl = 0;
-
-    registers[IR] = ((mem8[registers[PC] + 0] << 24) | (mem8[registers[PC] + 1] << 16) | (mem8[registers[PC] + 2] << 8) | (mem8[registers[PC] + 3] << 0)) | mem32[registers[PC] >> 2];
+    registers[IR] = ((mem8[registers[PC] + 0] << 24) |
+                     (mem8[registers[PC] + 1] << 16) |
+                     (mem8[registers[PC] + 2] << 8) |
+                     (mem8[registers[PC] + 3] << 0));
 
     uint8_t opcode = (registers[IR] >> 26) & 0x3F;
     switch (opcode)
@@ -222,22 +220,22 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
       break;
 
     case 0b011000: // l8
-      l8(registers, mem8, mem32);
+      l8(registers, mem8, output);
       break;
     case 0b011001: // l16
-      l16(registers, mem8, mem32);
+      l16(registers, mem8, output);
       break;
     case 0b011010: // l32
-      l32(registers, mem8, mem32);
+      l32(registers, mem8, output);
       break;
     case 0b011011: // s8
-      s8(registers, mem8, mem32);
+      s8(registers, mem8, output);
       break;
     case 0b011100: // s16
-      s16(registers, mem8, mem32);
+      s16(registers, mem8, output);
       break;
     case 0b011101: // s32
-      s32(registers, mem8, mem32);
+      s32(registers, mem8, output);
       break;
 
     case 0b101010: // bae
@@ -418,7 +416,7 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Falta fazer
 }
 
-void div(uint32_t registers[NUM_REGISTERS], FILE *output)
+void divv(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
@@ -940,25 +938,29 @@ void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output
  * Memory read/write operations
  *******************************************************/
 
-void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
+void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
-  uint8_t z = 0, x = 0, i = 0;
+  // Fetch operands
+  const uint8_t z = (registers[IR] & (0b11111 << 21)) >> 21;
+  const uint8_t x = (registers[IR] & (0b11111 << 16)) >> 16;
+  const uint8_t i = registers[IR] & 0xFFFF;
 
-  // Otendo operandos
-  z = (registers[IR] & (0b11111 << 21)) >> 21;
-  x = (registers[IR] & (0b11111 << 16)) >> 16;
-  i = registers[IR] & 0xFFFF;
-  // Execucao do comportamento com MEM8 e MEM32
-  registers[z] = mem8[registers[x] + i] | (((uint8_t *)(mem32))[(registers[x] + i) >> 2]);
-  // Formatacao da instrucao
+  // Instruction formatting
   sprintf(instruction, "l8 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
-  // Formatacao de saida em tela (deve mudar para o arquivo de saida)
+
+  // Execution of behavior
+  registers[z] = mem8[registers[x] + i];
+
+  // Screen output formatting
   printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%02X\n", registers[PC], instruction, z, registers[x] + i, registers[z]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%02X\n", registers[PC], instruction, z, registers[x] + i, registers[z]);
 }
 
-void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
+void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
@@ -967,25 +969,32 @@ void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
   // Falta fazer
 }
 
-void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
+void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
-  uint8_t z = 0, x = 0, i = 0;
+  // Fetch operands
+  const uint8_t z = (registers[IR] & (0b11111 << 21)) >> 21;
+  const uint8_t x = (registers[IR] & (0b11111 << 16)) >> 16;
+  const uint8_t i = registers[IR] & 0xFFFF;
 
-  // Otendo operandos
-  z = (registers[IR] & (0b11111 << 21)) >> 21;
-  x = (registers[IR] & (0b11111 << 16)) >> 16;
-  i = registers[IR] & 0xFFFF;
-  // Execucao do comportamento com MEM8 e MEM32
-  registers[z] = ((mem8[((registers[x] + i) << 2) + 0] << 24) | (mem8[((registers[x] + i) << 2) + 1] << 16) | (mem8[((registers[x] + i) << 2) + 2] << 8) | (mem8[((registers[x] + i) << 2) + 3] << 0)) | mem32[registers[x] + i];
-  // Formatacao da instrucao
+  // Instruction formatting
   sprintf(instruction, "l32 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
-  // Formatacao de saida em tela (deve mudar para o arquivo de saida)
+
+  // Execution of behavior
+  registers[z] = ((mem8[((registers[x] + i) << 2) + 0] << 24) |
+                  (mem8[((registers[x] + i) << 2) + 1] << 16) |
+                  (mem8[((registers[x] + i) << 2) + 2] << 8) |
+                  (mem8[((registers[x] + i) << 2) + 3] << 0));
+
+  // Screen output formatting
   printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, (registers[x] + i) << 2, registers[z]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, (registers[x] + i) << 2, registers[z]);
 }
 
-void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
+void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
@@ -994,7 +1003,7 @@ void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
   // Falta fazer
 }
 
-void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
+void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
@@ -1003,7 +1012,7 @@ void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
   // Falta fazer
 }
 
-void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
+void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
