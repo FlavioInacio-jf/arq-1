@@ -915,6 +915,45 @@ void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
 }
 
 /******************************************************
+ * Subroutine call operation
+ *******************************************************/
+
+void callf(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Falta fazer
+}
+
+void calls(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Falta fazer
+}
+
+void ret(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Falta fazer
+}
+
+void push(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Falta fazer
+}
+
+void pop(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  // Falta fazer
+}
+
+/******************************************************
  * Fetch from the status register(SR)
  *******************************************************/
 
