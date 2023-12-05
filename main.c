@@ -27,6 +27,28 @@ void loadMemory(FILE *input, uint8_t *mem8, uint32_t *mem32); // Load memory vec
 void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32, FILE *output);
 
 void mov(uint32_t registers[NUM_REGISTERS], FILE *output);
+void movs(uint32_t registers[NUM_REGISTERS], FILE *output);
+void add(uint32_t registers[NUM_REGISTERS], FILE *output);
+void sub(uint32_t registers[NUM_REGISTERS], FILE *output);
+void mul(uint32_t registers[NUM_REGISTERS], FILE *output);
+void sll(uint32_t registers[NUM_REGISTERS], FILE *output);
+void muls(uint32_t registers[NUM_REGISTERS], FILE *output);
+void sla(uint32_t registers[NUM_REGISTERS], FILE *output);
+void div(uint32_t registers[NUM_REGISTERS], FILE *output);
+void srl(uint32_t registers[NUM_REGISTERS], FILE *output);
+void divs(uint32_t registers[NUM_REGISTERS], FILE *output);
+void sra(uint32_t registers[NUM_REGISTERS], FILE *output);
+void cmp(uint32_t registers[NUM_REGISTERS], FILE *output);
+void and (uint32_t registers[NUM_REGISTERS], FILE *output);
+void or (uint32_t registers[NUM_REGISTERS], FILE *output);
+void not(uint32_t registers[NUM_REGISTERS], FILE *output);
+void xor (uint32_t registers[NUM_REGISTERS], FILE *output);
+void addi(uint32_t registers[NUM_REGISTERS], FILE *output);
+void subi(uint32_t registers[NUM_REGISTERS], FILE *output);
+void muli(uint32_t registers[NUM_REGISTERS], FILE *output);
+void divi(uint32_t registers[NUM_REGISTERS], FILE *output);
+void modi(uint32_t registers[NUM_REGISTERS], FILE *output);
+void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output);
 
 void bae(uint32_t registers[NUM_REGISTERS], FILE *output);
 void bat(uint32_t registers[NUM_REGISTERS], FILE *output);
@@ -153,6 +175,51 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
     case 0b000000: // mov
       mov(registers, output);
       break;
+    case 0b000001: // movs
+      movs(registers, output);
+      break;
+    case 0b000010: // add
+      add(registers, output);
+      break;
+    case 0b000011: // sub
+      sub(registers, output);
+      break;
+    case 0b000100: // mul, sll, muls, sla, div, srl, divs, sra
+      mul(registers, output);
+      break;
+    case 0b000101: // cmp
+      cmp(registers, output);
+      break;
+    case 0b000110: // and
+      and(registers, output);
+      break;
+    case 0b000111: // or
+      and(registers, output);
+      break;
+    case 0b001000: // not
+      not(registers, output);
+      break;
+    case 0b001001: // xor
+      xor(registers, output);
+      break;
+    case 0b010010: // addi
+      addi(registers, output);
+      break;
+    case 0b010011: // subi
+      subi(registers, output);
+      break;
+    case 0b010100: // muli
+      muli(registers, output);
+      break;
+    case 0b010101: // divi
+      divi(registers, output);
+      break;
+    case 0b010110: // modi
+      modi(registers, output);
+      break;
+    case 0b010111: // cmpi
+      cmpi(registers, output);
+      break;
 
     case 0b011000: // l8
       l8(registers, mem8, mem32);
@@ -258,26 +325,6 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
  * Arithmetic and logical operations
  *******************************************************/
 
-void add(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint8_t z = 0;
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
-void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint8_t z = 0;
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
 void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
@@ -312,6 +359,106 @@ void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Fetch operands
   z = (registers[IR] & 0x03E00000) >> 21;
   xyl = registers[IR] & 0x1FFFFF;
+
+  // Falta fazer
+}
+
+void add(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint8_t z = 0;
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void mul(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void sll(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void muls(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void div(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void srl(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void divs(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
 
   // Falta fazer
 }
@@ -355,97 +502,17 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
   // Falta fazer
 }
 
-    void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
+    void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
+  uint8_t z = 0;
   uint32_t x, y = 0;
 
   // Falta fazer
 }
 
-void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
-void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
-void sll(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
-void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
-void srl(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
-void div(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
-void divs(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
-void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
-void mul(uint32_t registers[NUM_REGISTERS], FILE *output)
-{
-  char instruction[30] = {0};
-
-  uint32_t x, y = 0;
-
-  // Falta fazer
-}
-
-void muls(uint32_t registers[NUM_REGISTERS], FILE *output)
+void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
@@ -463,7 +530,7 @@ void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Falta fazer
 }
 
-void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
+void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
@@ -472,7 +539,16 @@ void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Falta fazer
 }
 
-void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
+void modi(uint32_t registers[NUM_REGISTERS], FILE *output)
+{
+  char instruction[30] = {0};
+
+  uint32_t x, y = 0;
+
+  // Falta fazer
+}
+
+void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
