@@ -45,8 +45,12 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output);
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output);
 void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output);
 
-void l8(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32);
-void l32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32);
+void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
+void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
+void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
+void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
+void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
+void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32);
 
 int isZNSet(uint32_t registers[NUM_REGISTERS]);
 int isZDSet(uint32_t registers[NUM_REGISTERS]);
@@ -143,11 +147,24 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32
     case 0b000000: // mov
       mov(registers, output);
       break;
+
     case 0b011000: // l8
-      l8(registers, instrucao, mem8, mem32);
+      l8(registers, mem8, mem32);
+      break;
+    case 0b011001: // l16
+      l16(registers, mem8, mem32);
       break;
     case 0b011010: // l32
-      l32(registers, instrucao, mem8, mem32);
+      l32(registers, mem8, mem32);
+      break;
+    case 0b011011: // s8
+      s8(registers, mem8, mem32);
+      break;
+    case 0b011100: // s16
+      s16(registers, mem8, mem32);
+      break;
+    case 0b011101: // s32
+      s32(registers, mem8, mem32);
       break;
 
     case 0b101010: // bae
@@ -825,8 +842,10 @@ void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output
  * Memory read/write operations
  *******************************************************/
 
-void l8(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
+void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
 {
+  char instruction[30] = {0};
+
   uint8_t z = 0, x = 0, i = 0;
 
   // Otendo operandos
@@ -841,15 +860,19 @@ void l8(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, 
   printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%02X\n", registers[PC], instruction, z, registers[x] + i, registers[z]);
 }
 
-void l16(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
+void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
 {
+  char instruction[30] = {0};
+
   uint8_t z = 0, x = 0, i = 0;
 
   // Falta fazer
 }
 
-void l32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
+void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
 {
+  char instruction[30] = {0};
+
   uint8_t z = 0, x = 0, i = 0;
 
   // Otendo operandos
@@ -864,22 +887,28 @@ void l32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8,
   printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, (registers[x] + i) << 2, registers[z]);
 }
 
-void s8(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
+void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
 {
+  char instruction[30] = {0};
+
   uint8_t z = 0, x = 0, i = 0;
 
   // Falta fazer
 }
 
-void s16(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
+void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
 {
+  char instruction[30] = {0};
+
   uint8_t z = 0, x = 0, i = 0;
 
   // Falta fazer
 }
 
-void s32(uint32_t registers[NUM_REGISTERS], char instruction[30], uint8_t *mem8, uint32_t *mem32)
+void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *mem32)
 {
+  char instruction[30] = {0};
+
   uint8_t z = 0, x = 0, i = 0;
 
   // Falta fazer
