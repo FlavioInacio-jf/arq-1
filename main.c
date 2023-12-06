@@ -134,7 +134,7 @@ void loadMemory(FILE *input, uint8_t *mem8)
 
   while (fgets(hexString, sizeof(char) * 32, input) != NULL)
   {
-    uint32_t hexCode = strtoul(hexString, NULL, 16);
+    const uint32_t hexCode = strtoul(hexString, NULL, 16);
 
     mem8[count] = (hexCode & 0xFF000000) >> 24;
     mem8[count + 1] = (hexCode & 0x00FF0000) >> 16;
@@ -490,9 +490,43 @@ void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
-  uint32_t x, y = 0;
+  // Fetch operands
+  const uint32_t x = (registers[IR] >> 16) & 0x1F;
+  const uint32_t y = (registers[IR] >> 10) & 0x1F;
 
-  // Falta fazer
+  // Instruction formatting
+  sprintf(instruction, "cmp %u,%u", x, y);
+
+  // Execution of behavior
+  const int32_t dff = (int32_t)registers[x] - (int32_t)registers[y];
+
+  if (dff == 0)
+  {
+    registers[SR] = 0b00000001; // ZN
+  }
+
+  if ((dff >> 31) == 1)
+  {
+    registers[SR] |= 0b00010000; // SN
+  }
+
+  if (((registers[x] >> 31) != (registers[y] >> 31)) && ((dff >> 30) != (registers[x] >> 30)))
+  {
+    registers[SR] |= 0b00001000; // OV
+  }
+
+  if ((dff >> 31) == 1)
+  {
+    registers[SR] |= 0b00000001; // CY
+  }
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tSR=0x%08X\n", registers[PC], instruction, registers[SR]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tSR=0x%08X\n", registers[PC], instruction, registers[SR]);
+
+  // Falta corrigir
 }
 
 void and (uint32_t registers[NUM_REGISTERS], FILE *output)
