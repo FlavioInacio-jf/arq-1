@@ -1105,18 +1105,50 @@ void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
-  uint8_t z = 0, x = 0, i = 0;
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t i = registers[IR] & 0xFFFF;
 
-  // Falta fazer
+  // Instruction formatting
+  sprintf(instruction, "s16 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
+
+  // Execution of behavior
+  const uint32_t memoryAddress = ((registers[x] + i) << 1);
+  mem8[memoryAddress] = (registers[z] >> 24) & 0xFF;
+  mem8[memoryAddress + 1] = (registers[z] >> 16) & 0xFF;
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tMEM[0x%08X]=R%u=0x%02X\n", registers[PC], instruction, memoryAddress, z, registers[z]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%02X\n", registers[PC], instruction, z, memoryAddress, registers[z]);
 }
 
 void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
-  uint8_t z = 0, x = 0, i = 0;
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t i = registers[IR] & 0xFFFF;
 
-  // Falta fazer
+  // Instruction formatting
+  sprintf(instruction, "s32 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
+
+  // Execution of behavior
+  const uint32_t memoryAddress = ((registers[x] + i) << 2);
+  mem8[memoryAddress + 0] = (registers[z] >> 24) & 0xFF;
+  mem8[memoryAddress + 1] = (registers[z] >> 16) & 0xFF;
+  mem8[memoryAddress + 2] = (registers[z] >> 8) & 0xFF;
+  mem8[memoryAddress + 3] = (registers[z]) & 0xFF;
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tMEM[0x%08X]=R%u=0x%08X\n", registers[PC], instruction, memoryAddress, z, registers[z]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, memoryAddress, registers[z]);
 }
 
 /******************************************************
