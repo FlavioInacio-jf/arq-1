@@ -1083,9 +1083,22 @@ void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
-  uint8_t z = 0, x = 0, i = 0;
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t i = registers[IR] & 0xFFFF;
 
-  // Falta fazer
+  // Instruction formatting
+  sprintf(instruction, "s8 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
+
+  // Execution of behavior
+  mem8[registers[x] + i] = registers[z];
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tMEM[0x%08X]=R%u=0x%02X\n", registers[PC], instruction, registers[x] + i, z, registers[z]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%02X\n", registers[PC], instruction, z, registers[x] + i, registers[z]);
 }
 
 void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
