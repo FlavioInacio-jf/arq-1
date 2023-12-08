@@ -1012,8 +1012,8 @@ void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint8_t z = (registers[IR] & (0b11111 << 21)) >> 21;
-  const uint8_t x = (registers[IR] & (0b11111 << 16)) >> 16;
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
   const uint8_t i = registers[IR] & 0xFFFF;
 
   // Instruction formatting
@@ -1043,8 +1043,8 @@ void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint8_t z = (registers[IR] & (0b11111 << 21)) >> 21;
-  const uint8_t x = (registers[IR] & (0b11111 << 16)) >> 16;
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
   const uint8_t i = registers[IR] & 0xFFFF;
 
   // Instruction formatting
