@@ -1112,7 +1112,21 @@ void ret(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
-  // Falta fazer
+  // Instruction formatting
+  sprintf(instruction, "ret");
+
+  // Execution of behavior
+  const uint32_t oldPC = registers[PC];
+  registers[SP] = registers[SP] + 4;
+  registers[PC] = registers[SP];
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%02X\n", oldPC, instruction, registers[PC], registers[SP]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%02X\n", oldPC, instruction, registers[PC], registers[SP]);
+
+  // Falta corrigir
 }
 
 void push(uint32_t registers[NUM_REGISTERS], FILE *output)
