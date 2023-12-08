@@ -1033,9 +1033,24 @@ void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
-  uint8_t z = 0, x = 0, i = 0;
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t i = registers[IR] & 0xFFFF;
 
-  // Falta fazer
+  // Instruction formatting
+  sprintf(instruction, "l16 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
+
+  // Execution of behavior
+  const uint32_t memoryAddress = ((registers[x] + i) << 1);
+  registers[z] = ((mem8[memoryAddress] << 24) |
+                  (mem8[memoryAddress + 1] << 16));
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, memoryAddress, registers[z]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, memoryAddress, registers[z]);
 }
 
 void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
@@ -1051,16 +1066,17 @@ void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   sprintf(instruction, "l32 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
 
   // Execution of behavior
-  registers[z] = ((mem8[((registers[x] + i) << 2) + 0] << 24) |
-                  (mem8[((registers[x] + i) << 2) + 1] << 16) |
-                  (mem8[((registers[x] + i) << 2) + 2] << 8) |
-                  (mem8[((registers[x] + i) << 2) + 3] << 0));
+  const uint32_t memoryAddress = ((registers[x] + i) << 2);
+  registers[z] = ((mem8[memoryAddress] << 24) |
+                  (mem8[memoryAddress + 1] << 16) |
+                  (mem8[memoryAddress + 2] << 8) |
+                  (mem8[memoryAddress + 3] << 0));
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, (registers[x] + i) << 2, registers[z]);
+  printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, memoryAddress, registers[z]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, (registers[x] + i) << 2, registers[z]);
+  fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", registers[PC], instruction, z, memoryAddress, registers[z]);
 }
 
 void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
