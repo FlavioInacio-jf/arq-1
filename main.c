@@ -385,14 +385,37 @@ void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
-  uint8_t z = 0;
-  uint32_t xyl = 0;
-
   // Fetch operands
-  z = (registers[IR] & 0x03E00000) >> 21;
-  xyl = registers[IR] & 0x1FFFFF;
+  const uint8_t z = (registers[IR] & 0x03E00000) >> 21;
+  const int32_t xyl = (registers[IR] & 0x1FFFFF) |
+                       ((registers[IR] & 0x100000) ? 0xFFF00000 : 0x00000000);
 
-  // Falta fazer
+  // Execution of behavior
+  registers[z] = xyl;
+
+    // Instruction formatting
+  switch (z)
+  {
+
+  case SP:
+    sprintf(instruction, "movs sp,%i", xyl);
+
+    // Screen output formatting
+    printf("0x%08X:\t%-25s\tSP=0x%08X\n", registers[PC], instruction, xyl);
+
+    // Output formatting to file
+    fprintf(output, "0x%08X:\t%-25s\tSP=0x%08X\n", registers[PC], instruction, xyl);
+    break;
+
+  default:
+    sprintf(instruction, "movs r%u,%i", z, xyl);
+
+    // Screen output formatting
+    printf("0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
+
+    // Output formatting to file
+    fprintf(output, "0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
+  }
 }
 
 void add(uint32_t registers[NUM_REGISTERS], FILE *output)
@@ -1295,3 +1318,7 @@ int isZNSet(uint32_t registers[NUM_REGISTERS])
 {
   return ((registers[SR] && 0x00000040) >> 6) != 0;
 }
+
+/******************************************************
+ * Utility Functions
+ *******************************************************/
