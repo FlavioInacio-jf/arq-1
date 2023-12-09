@@ -75,7 +75,7 @@ void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 
 void callf(uint32_t registers[NUM_REGISTERS], FILE *output);
-void calls(uint32_t registers[NUM_REGISTERS], FILE *output);
+void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void ret(uint32_t registers[NUM_REGISTERS], FILE *output);
 void push(uint32_t registers[NUM_REGISTERS], FILE *output);
 void pop(uint32_t registers[NUM_REGISTERS], FILE *output);
@@ -313,7 +313,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
       callf(registers, output);
       break;
     case 0b111001: // call type S
-      calls(registers, output);
+      calls(registers, mem8, output);
       break;
     case 0b011111: // ret
       ret(registers, output);
@@ -1162,11 +1162,32 @@ void callf(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Falta fazer
 }
 
-void calls(uint32_t registers[NUM_REGISTERS], FILE *output)
+void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
-  // Falta fazer
+  // Fetch operands
+  const int32_t i = (registers[IR] & 0x03FFFFFF) | ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+
+  // Instruction formatting
+  sprintf(instruction, "call %i", i);
+
+  // Execution of behavior
+  const uint32_t oldPC = registers[PC];
+
+  mem8[registers[SP]] = ((registers[PC] + 4) >> 24) & 0xFF;
+  mem8[registers[SP] + 1] = ((registers[PC] + 4) >> 16) & 0xFF;
+  mem8[registers[SP] + 2] = ((registers[PC] + 4) >> 8) & 0xFF;
+  mem8[registers[SP] + 3] = ((registers[PC] + 4) >> 0) & 0xFF;
+
+  registers[PC] = registers[PC] + 4 + (i << 2);
+  registers[SP] = registers[SP] - 4;
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
 }
 
 void ret(uint32_t registers[NUM_REGISTERS], FILE *output)
