@@ -618,9 +618,46 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
-  uint32_t x, y = 0;
+  // Fetch operands
+  const uint32_t x = (registers[IR] >> 16) & 0x1F;
+  const int32_t valueX = (int32_t)registers[x];
 
-  // Falta fazer
+  const int32_t i = (registers[IR] & 0xFFFF) |
+                    ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+
+  // Instruction formatting
+  sprintf(instruction, "cmpi r%u,%i", x, i);
+
+  // Execution of behavior
+  memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
+  const int32_t dff = valueX - i;
+
+  if (dff == 0)
+  {
+    registers[SR] = 0b00000001; // ZN
+  }
+
+  if ((dff & 0x80000000)) // Check MSB
+  {
+    registers[SR] |= 0b00010000; // SN
+  }
+
+  if ((valueX & 0x8FFFFFFF) != (i & 0x8FFFFFFF) &&
+      ((dff & 0x8FFFFFF) != (valueX & 0x8FFFFFF)))
+  {
+    registers[SR] |= 0b00001000; // OV
+  }
+
+  if ((dff & 0x80000000) == 1) // Check MSB
+  {
+    registers[SR] |= 0b00000001; // CY
+  }
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tSR=0x%08X\n", registers[PC], instruction, registers[SR]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tSR=0x%08X\n", registers[PC], instruction, registers[SR]);
 }
 
 /******************************************************
@@ -1180,14 +1217,14 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   mem8[registers[SP] + 2] = ((registers[PC] + 4) >> 8) & 0xFF;
   mem8[registers[SP] + 3] = ((registers[PC] + 4) >> 0) & 0xFF;
 
-  registers[PC] = registers[PC] + 4 + (i << 2);
+  registers[PC] = registers[PC] + (i << 2);
   registers[SP] = registers[SP] - 4;
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC] + 4, registers[SP] + 4, oldPC + 4);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC] + 4, registers[SP] + 4, oldPC + 4);
 }
 
 void ret(uint32_t registers[NUM_REGISTERS], FILE *output)
