@@ -6,6 +6,7 @@
 #include <stdlib.h> // General-purpose functions, including memory allocation and random number generation.
 #include <stdio.h>  // Standard Input/Output library for input and output operations.
 #include <string.h>
+#include <stdbool.h>
 
 /******************************************************
  * Utility Constants
@@ -65,7 +66,7 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output);
 void bnz(uint32_t registers[NUM_REGISTERS], FILE *output);
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output);
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output);
-void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output);
+void interrupt(uint32_t registers[NUM_REGISTERS], bool *executa, FILE *output);
 
 void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
@@ -74,9 +75,9 @@ void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 
-void callf(uint32_t registers[NUM_REGISTERS], FILE *output);
-void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
+void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
 void push(uint32_t registers[NUM_REGISTERS], FILE *output);
 void pop(uint32_t registers[NUM_REGISTERS], FILE *output);
 
@@ -152,7 +153,9 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
 
   printf("[START OF SIMULATION]\n");
 
-  uint8_t executa = 1;
+  bool executa = true;
+  bool pcAlreadyIncremented = false; // Flag to track whether the PC has been incremented
+
   while (executa)
   {
     registers[IR] = ((mem8[registers[PC] + 0] << 24) |
@@ -310,13 +313,13 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
       break;
 
     case 0b011110: // call type F
-      callf(registers, output);
+      callf(registers, mem8, output);
       break;
     case 0b111001: // call type S
-      calls(registers, mem8, output);
+      calls(registers, mem8, output, &pcAlreadyIncremented);
       break;
     case 0b011111: // ret
-      ret(registers, mem8, output);
+      ret(registers, mem8, output, &pcAlreadyIncremented);
       break;
     case 0b001010: // push
       push(registers, output);
@@ -330,9 +333,10 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
       // Parar a execucao
       executa = 0;
     }
-    // PC = PC + 4 (proxima instrucao)
-    registers[PC] = registers[PC] + 4;
-    // Exibindo a finalizacao da execucao
+    if (!pcAlreadyIncremented)
+      registers[PC] += 4; // PC = PC + 4 (next instruction)
+
+    pcAlreadyIncremented = false;
   }
 
   // Output formatting to file
@@ -1044,7 +1048,7 @@ void bun(uint32_t registers[NUM_REGISTERS], FILE *output)
   fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
 }
 
-void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *executa, FILE *output)
+void interrupt(uint32_t registers[NUM_REGISTERS], bool *executa, FILE *output)
 {
   char instruction[30] = {0};
 
@@ -1215,14 +1219,36 @@ void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
  * Subroutine call operation
  *******************************************************/
 
-void callf(uint32_t registers[NUM_REGISTERS], FILE *output)
+void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
-  // Falta fazer
+  // Fetch operands
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const int32_t i = (registers[IR] & 0xFFFF) | ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+
+  // Instruction formatting
+  sprintf(instruction, "call [r%u%s%i]", x, (i >= 0) ? ("+") : (""), i);
+
+  // Execution of behavior
+  const uint32_t oldPC = registers[PC];
+
+  mem8[registers[SP]] = ((registers[PC] + 4) >> 24) & 0xFF;
+  mem8[registers[SP] + 1] = ((registers[PC] + 4) >> 16) & 0xFF;
+  mem8[registers[SP] + 2] = ((registers[PC] + 4) >> 8) & 0xFF;
+  mem8[registers[SP] + 3] = ((registers[PC] + 4) >> 0) & 0xFF;
+
+  registers[PC] = (registers[x] + i) << 2;
+  registers[SP] = registers[SP] - 4;
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
 }
 
-void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
@@ -1233,6 +1259,8 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   sprintf(instruction, "call %i", i);
 
   // Execution of behavior
+  *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
+
   const uint32_t oldPC = registers[PC];
 
   mem8[registers[SP]] = ((registers[PC] + 4) >> 24) & 0xFF;
@@ -1240,17 +1268,17 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   mem8[registers[SP] + 2] = ((registers[PC] + 4) >> 8) & 0xFF;
   mem8[registers[SP] + 3] = ((registers[PC] + 4) >> 0) & 0xFF;
 
-  registers[PC] = registers[PC] + (i << 2);
+  registers[PC] = registers[PC] + 4 + (i << 2);
   registers[SP] = registers[SP] - 4;
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC] + 4, registers[SP] + 4, oldPC + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC] + 4, registers[SP] + 4, oldPC + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
 }
 
-void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
@@ -1258,6 +1286,8 @@ void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   sprintf(instruction, "ret");
 
   // Execution of behavior
+  *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
+
   const uint32_t oldPC = registers[PC];
   registers[SP] += 4;
   registers[PC] = ((mem8[registers[SP]] << 24) |
