@@ -7,6 +7,7 @@
 #include <stdio.h>  // Standard Input/Output library for input and output operations.
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 /******************************************************
  * Utility Constants
@@ -87,6 +88,7 @@ int isSNSet(uint32_t registers[NUM_REGISTERS]);
 int isOVSet(uint32_t registers[NUM_REGISTERS]);
 int isIVSet(uint32_t registers[NUM_REGISTERS]);
 int isCYSet(uint32_t registers[NUM_REGISTERS]);
+char *formatRegisterName(uint8_t registerNumber, bool lower);
 
 // Principal function
 int main(int argc, char *argv[])
@@ -361,28 +363,13 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
   registers[z] = xyl;
 
   // Instruction formatting
-  switch (z)
-  {
+  sprintf(instruction, "mov %s,%u", formatRegisterName(z, true), xyl);
 
-  case SP:
-    sprintf(instruction, "mov sp,%u", xyl);
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\t%s=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), xyl);
 
-    // Screen output formatting
-    printf("0x%08X:\t%-25s\tSP=0x%08X\n", registers[PC], instruction, xyl);
-
-    // Output formatting to file
-    fprintf(output, "0x%08X:\t%-25s\tSP=0x%08X\n", registers[PC], instruction, xyl);
-    break;
-
-  default:
-    sprintf(instruction, "mov r%u,%u", z, xyl);
-
-    // Screen output formatting
-    printf("0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
-
-    // Output formatting to file
-    fprintf(output, "0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
-  }
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), xyl);
 }
 
 void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
@@ -1228,7 +1215,8 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   const int32_t i = (registers[IR] & 0xFFFF) | ((registers[IR] & 0x00004000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "call [r%u%s%i]", x, (i >= 0) ? ("+") : (""), i);
+  sprintf(instruction, "call [%s%s%i]",
+          formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1353,3 +1341,48 @@ int isZNSet(uint32_t registers[NUM_REGISTERS])
 /******************************************************
  * Utility Functions
  *******************************************************/
+
+char *formatRegisterName(uint8_t registerNumber, bool lower)
+{
+  char *result;
+
+  if (registerNumber >= (NUM_REGISTERS - 4))
+  {
+    char instruction[3] = {0};
+
+    switch (registerNumber)
+    {
+    case IR:
+      sprintf(instruction, "IR");
+      break;
+    case PC:
+      sprintf(instruction, "PC");
+      break;
+    case SP:
+      sprintf(instruction, "SP");
+      break;
+    case SR:
+      sprintf(instruction, "SR");
+      break;
+    }
+
+    result = malloc(strlen(instruction) + 1);
+    strcpy(result, instruction);
+  }
+  else
+  {
+    size_t len = snprintf(NULL, 0, "R%u", registerNumber) + 1;
+    result = malloc(len);
+    snprintf(result, len, "R%u", registerNumber);
+  }
+
+  if (lower)
+  {
+    for (size_t i = 0; result[i]; i++)
+    {
+      result[i] = tolower((unsigned char)result[i]);
+    }
+  }
+
+  return result;
+}
