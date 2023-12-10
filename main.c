@@ -76,7 +76,7 @@ void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 
 void callf(uint32_t registers[NUM_REGISTERS], FILE *output);
 void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void ret(uint32_t registers[NUM_REGISTERS], FILE *output);
+void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void push(uint32_t registers[NUM_REGISTERS], FILE *output);
 void pop(uint32_t registers[NUM_REGISTERS], FILE *output);
 
@@ -316,7 +316,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
       calls(registers, mem8, output);
       break;
     case 0b011111: // ret
-      ret(registers, output);
+      ret(registers, mem8, output);
       break;
     case 0b001010: // push
       push(registers, output);
@@ -388,12 +388,12 @@ void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] & 0x03E00000) >> 21;
   const int32_t xyl = (registers[IR] & 0x1FFFFF) |
-                       ((registers[IR] & 0x100000) ? 0xFFF00000 : 0x00000000);
+                      ((registers[IR] & 0x100000) ? 0xFFF00000 : 0x00000000);
 
   // Execution of behavior
   registers[z] = xyl;
 
-    // Instruction formatting
+  // Instruction formatting
   switch (z)
   {
 
@@ -1250,7 +1250,7 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC] + 4, registers[SP] + 4, oldPC + 4);
 }
 
-void ret(uint32_t registers[NUM_REGISTERS], FILE *output)
+void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
   char instruction[30] = {0};
 
@@ -1259,16 +1259,17 @@ void ret(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
-  registers[SP] = registers[SP] + 4;
-  registers[PC] = registers[SP];
+  registers[SP] += 4;
+  registers[PC] = ((mem8[registers[SP]] << 24) |
+                   (mem8[registers[SP] + 1] << 16) |
+                   (mem8[registers[SP] + 2] << 8) |
+                   (mem8[registers[SP] + 3] << 0));
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%02X\n", oldPC, instruction, registers[PC], registers[SP]);
+  printf("0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[SP], registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%02X\n", oldPC, instruction, registers[PC], registers[SP]);
-
-  // Falta corrigir
+  fprintf(output, "0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[SP], registers[PC]);
 }
 
 void push(uint32_t registers[NUM_REGISTERS], FILE *output)
