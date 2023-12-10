@@ -385,28 +385,13 @@ void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
   registers[z] = xyl;
 
   // Instruction formatting
-  switch (z)
-  {
+  sprintf(instruction, "mov %s,%u", formatRegisterName(z, true), xyl);
 
-  case SP:
-    sprintf(instruction, "movs sp,%i", xyl);
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\t%s=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), xyl);
 
-    // Screen output formatting
-    printf("0x%08X:\t%-25s\tSP=0x%08X\n", registers[PC], instruction, xyl);
-
-    // Output formatting to file
-    fprintf(output, "0x%08X:\t%-25s\tSP=0x%08X\n", registers[PC], instruction, xyl);
-    break;
-
-  default:
-    sprintf(instruction, "movs r%u,%i", z, xyl);
-
-    // Screen output formatting
-    printf("0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
-
-    // Output formatting to file
-    fprintf(output, "0x%08X:\t%-25s\tR%u=0x%08X\n", registers[PC], instruction, z, xyl);
-  }
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), xyl);
 }
 
 void add(uint32_t registers[NUM_REGISTERS], FILE *output)
