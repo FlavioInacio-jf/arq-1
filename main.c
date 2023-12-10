@@ -577,19 +577,7 @@ void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint32_t y = (registers[IR] >> 10) & 0x1F;
 
   // Instruction formatting
-  sprintf(instruction, "cmp %u,%u", x, y);
-
-  // Execution of behavior
-  char instruction[30] = {0};
-
-  // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
-
-  // Instruction formatting
-  sprintf(instruction, "sub %s,%s,%s",
-          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
+  sprintf(instruction, "cmp %s,%s", formatRegisterName(x, true), formatRegisterName(y, true));
 
   // Execution of behavior
   registers[SR] = 0x00000000; // Reset Status Register
@@ -597,7 +585,6 @@ void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueY = (uint64_t)registers[y];
 
   const uint64_t result = valueX - valueY;
-  registers[z] = (uint32_t)result;
 
   if (result == 0)
   {
@@ -668,14 +655,52 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
   // Falta fazer
 }
 
-    void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
+void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
-  uint8_t z = 0;
-  uint32_t x, y = 0;
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t i = (registers[IR] & 0xFFFF) |
+                    ((registers[IR] & 0x00004000) ? 0xFC000000 : 0x00000000);
 
-  // Falta fazer
+  // Instruction formatting
+  sprintf(instruction, "addi %s,%s,%u",
+          formatRegisterName(z, true), formatRegisterName(x, true), i);
+
+  // Execution of behavior
+  registers[SR] = 0x00000000; // Reset Status Register
+  const uint64_t valueX = (uint64_t)registers[x];
+
+  const uint64_t result = valueX + (uint64_t)i;
+  registers[z] = (uint32_t)result;
+
+  if (registers[z] == 0)
+  {
+    registers[SR] |= ZN_FLAG;
+  }
+
+  if ((result & 0x80000000)) // Check MSB
+  {
+    registers[SR] |= SN_FLAG;
+  }
+
+  if ((valueX > 0 && i > 0 && result <= 0) || (valueX < 0 && i < 0 && result >= 0))
+  {
+    registers[SR] |= OV_FLAG;
+  }
+
+  if (result > 0xFFFFFFFF)
+  {
+    registers[SR] |= CY_FLAG;
+  }
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\t%s=%s+0x%08X=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\t%s=%s+0x%08X=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
 }
 
 void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
