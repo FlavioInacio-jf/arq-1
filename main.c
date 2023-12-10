@@ -21,6 +21,12 @@
 #define SP 30 // Stack Pointer
 #define SR 31 // Status Register
 
+// Flags in Status Register
+#define ZN_FLAG 0b01000000
+#define SN_FLAG 0b00010000
+#define OV_FLAG 0b00001000
+#define CY_FLAG 0b00000001
+
 /******************************************************
  * Functin Signature
  *******************************************************/
@@ -76,7 +82,7 @@ void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 
-void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
 void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
 void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
 void push(uint32_t registers[NUM_REGISTERS], FILE *output);
@@ -315,7 +321,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
       break;
 
     case 0b011110: // call type F
-      callf(registers, mem8, output);
+      callf(registers, mem8, output, &pcAlreadyIncremented);
       break;
     case 0b111001: // call type S
       calls(registers, mem8, output, &pcAlreadyIncremented);
@@ -385,7 +391,7 @@ void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
   registers[z] = xyl;
 
   // Instruction formatting
-  sprintf(instruction, "mov %s,%u", formatRegisterName(z, true), xyl);
+  sprintf(instruction, "movs %s,%i", formatRegisterName(z, true), xyl);
 
   // Screen output formatting
   printf("0x%08X:\t%-25s\t%s=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), xyl);
@@ -399,9 +405,47 @@ void add(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint8_t z = (registers[IR] & 0x03E00000) >> 21;
-  const int32_t xyl = (registers[IR] & 0x1FFFFF) |
-                      ((registers[IR] & 0x100000) ? 0xFFF00000 : 0x00000000);
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+
+  // Instruction formatting
+  sprintf(instruction, "add %s,%s,%s",
+          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
+
+  // Execution of behavior
+  registers[SR] = 0x00000000; // Reset Status Register
+  const uint64_t valueX = (uint64_t)registers[x];
+  const uint64_t valueY = (uint64_t)registers[y];
+
+  const uint64_t result = valueX + valueY;
+  registers[z] = (uint32_t)result;
+
+  if (result == 0)
+  {
+    registers[SR] |= ZN_FLAG;
+  }
+
+  if ((result & 0x80000000)) // Check MSB
+  {
+    registers[SR] |= SN_FLAG;
+  }
+
+  if ((valueX > 0 && valueY > 0 && result <= 0) || (valueX < 0 && valueY < 0 && result >= 0))
+  {
+    registers[SR] |= OV_FLAG;
+  }
+
+  if (result > 0xFFFFFFFF)
+  {
+    registers[SR] |= CY_FLAG;
+  }
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
 }
 
 void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
@@ -628,7 +672,7 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
   sprintf(instruction, "cmpi r%u,%i", x, i);
 
   // Execution of behavior
-  memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
+  registers[SR] = 0x00000000; // Reset Status Register
   const int32_t dff = valueX - i;
 
   if (dff == 0)
@@ -1191,7 +1235,7 @@ void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
  * Subroutine call operation
  *******************************************************/
 
-void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
@@ -1204,6 +1248,7 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
           formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
 
   // Execution of behavior
+  *(pcAlreadyIncremented) = true; // Prevent it from being incremented
   const uint32_t oldPC = registers[PC];
 
   mem8[registers[SP]] = ((registers[PC] + 4) >> 24) & 0xFF;
@@ -1212,7 +1257,7 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   mem8[registers[SP] + 3] = ((registers[PC] + 4) >> 0) & 0xFF;
 
   registers[PC] = (registers[x] + i) << 2;
-  registers[SP] = registers[SP] - 4;
+  registers[SP] -= 4;
 
   // Screen output formatting
   printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
