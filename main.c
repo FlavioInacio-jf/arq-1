@@ -580,26 +580,44 @@ void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
   sprintf(instruction, "cmp %u,%u", x, y);
 
   // Execution of behavior
-  const int32_t dff = (int32_t)registers[x] - (int32_t)registers[y];
+  char instruction[30] = {0};
 
-  if (dff == 0)
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+
+  // Instruction formatting
+  sprintf(instruction, "sub %s,%s,%s",
+          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
+
+  // Execution of behavior
+  registers[SR] = 0x00000000; // Reset Status Register
+  const uint64_t valueX = (uint64_t)registers[x];
+  const uint64_t valueY = (uint64_t)registers[y];
+
+  const uint64_t result = valueX - valueY;
+  registers[z] = (uint32_t)result;
+
+  if (result == 0)
   {
-    registers[SR] = 0b00000001; // ZN
+    registers[SR] |= ZN_FLAG;
   }
 
-  if ((dff >> 31) == 1)
+  if ((result & 0x80000000)) // Check MSB
   {
-    registers[SR] |= 0b00010000; // SN
+    registers[SR] |= SN_FLAG;
   }
 
-  if (((registers[x] >> 31) != (registers[y] >> 31)) && ((dff >> 30) != (registers[x] >> 30)))
+  if (((valueX & 0x8FFFFFFF) == (valueY & 0x8FFFFFFF)) ||
+      (valueX < 0 && valueY < 0 && result >= 0))
   {
-    registers[SR] |= 0b00001000; // OV
+    registers[SR] |= OV_FLAG;
   }
 
-  if ((dff >> 31) == 1)
+  if (result > 0xFFFFFFFF)
   {
-    registers[SR] |= 0b00000001; // CY
+    registers[SR] |= CY_FLAG;
   }
 
   // Screen output formatting
