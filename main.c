@@ -426,10 +426,10 @@ void add(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
-  uint8_t z = 0;
-  uint32_t x, y = 0;
-
-  // Falta fazer
+  // Fetch operands
+  const uint8_t z = (registers[IR] & 0x03E00000) >> 21;
+  const int32_t xyl = (registers[IR] & 0x1FFFFF) |
+                      ((registers[IR] & 0x100000) ? 0xFFF00000 : 0x00000000);
 }
 
 void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
@@ -1225,7 +1225,7 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Fetch operands
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = (registers[IR] & 0xFFFF) | ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const int32_t i = (registers[IR] & 0xFFFF) | ((registers[IR] & 0x00004000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
   sprintf(instruction, "call [r%u%s%i]", x, (i >= 0) ? ("+") : (""), i);
