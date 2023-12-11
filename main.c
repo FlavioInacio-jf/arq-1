@@ -23,8 +23,10 @@
 
 // Flags in Status Register
 #define ZN_FLAG 0b01000000
+#define ZD_FLAG 0b00100000
 #define SN_FLAG 0b00010000
 #define OV_FLAG 0b00001000
+#define IV_FLAG 0b00000100
 #define CY_FLAG 0b00000001
 
 /******************************************************
@@ -835,10 +837,11 @@ void bae(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bae %i", label);
+  sprintf(instruction, "bae %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -859,10 +862,11 @@ void bat(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bat %i", label);
+  sprintf(instruction, "bat %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -883,10 +887,11 @@ void bbe(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bbe %i", label);
+  sprintf(instruction, "bbe %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -907,10 +912,11 @@ void bbt(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bbt %i", label);
+  sprintf(instruction, "bbt %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -931,10 +937,11 @@ void beq(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "beq %i", label);
+  sprintf(instruction, "beq %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -955,10 +962,11 @@ void bge(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bge %i", label);
+  sprintf(instruction, "bge %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -979,10 +987,11 @@ void bgt(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bgt %i", label);
+  sprintf(instruction, "bgt %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1003,10 +1012,11 @@ void biv(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "biv %i", label);
+  sprintf(instruction, "biv %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1027,10 +1037,11 @@ void ble(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "ble %i", label);
+  sprintf(instruction, "ble %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1051,10 +1062,11 @@ void blt(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "blt %i", label);
+  sprintf(instruction, "blt %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1075,10 +1087,11 @@ void bne(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bne %i", label);
+  sprintf(instruction, "bne %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1099,10 +1112,11 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bni %i", label);
+  sprintf(instruction, "bni %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1123,10 +1137,11 @@ void bnz(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bnz %i", label);
+  sprintf(instruction, "bnz %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1147,10 +1162,11 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bzd %i", label);
+  sprintf(instruction, "bzd %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1171,10 +1187,11 @@ void bun(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = registers[IR] & 0x03FFFFFF;
+  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
+                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
-  sprintf(instruction, "bun %i", label);
+  sprintf(instruction, "bun %u", label);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1364,7 +1381,8 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
 
   // Fetch operands
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = (registers[IR] & 0xFFFF) | ((registers[IR] & 0x00004000) ? 0xFC000000 : 0x00000000);
+  const int32_t i = (registers[IR] & 0xFFFF) |
+                    ((registers[IR] & 0x00004000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
   sprintf(instruction, "call [%s%s%i]",
@@ -1532,32 +1550,32 @@ void pop(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 int isCYSet(uint32_t registers[NUM_REGISTERS])
 {
-  return (registers[SR] && 0x00000001) != 0;
+  return (registers[SR] & CY_FLAG) != 0;
 }
 
 int isIVSet(uint32_t registers[NUM_REGISTERS])
 {
-  return ((registers[SR] && 0x00000004) >> 2) != 0;
+  return ((registers[SR] & IV_FLAG) >> 2) != 0;
 }
 
 int isOVSet(uint32_t registers[NUM_REGISTERS])
 {
-  return ((registers[SR] && 0x00000008) >> 3) != 0;
+  return ((registers[SR] & OV_FLAG) >> 3) != 0;
 }
 
 int isSNSet(uint32_t registers[NUM_REGISTERS])
 {
-  return ((registers[SR] && 0x00000010) >> 4) != 0;
+  return ((registers[SR] & SN_FLAG) >> 4) != 0;
 }
 
 int isZDSet(uint32_t registers[NUM_REGISTERS])
 {
-  return ((registers[SR] && 0x00000020) >> 5) != 0;
+  return ((registers[SR] & ZD_FLAG) >> 5) != 0;
 }
 
 int isZNSet(uint32_t registers[NUM_REGISTERS])
 {
-  return ((registers[SR] && 0x00000040) >> 6) != 0;
+  return ((registers[SR] & ZN_FLAG) >> 6) != 0;
 }
 
 /******************************************************
