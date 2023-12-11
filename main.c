@@ -734,9 +734,9 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
     registers[SR] |= SN_FLAG;
   }
 
-  if ((valueX > 0 && i > 0 && result <= 0) || (valueX < 0 && i < 0 && result >= 0))
+  if ((valueX >= 0 && i > 0 && result > valueX) || (valueX < 0 && i < 0 && result < valueX))
   {
-    registers[SR] |= OV_FLAG;
+    registers[SR] |= OV_FLAG; // Erro
   }
 
   if (result > 0xFFFFFFFF)
@@ -749,6 +749,8 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Output formatting to file
   fprintf(output, "0x%08X:\t%-25s\t%s=%s-0x%08X=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
+
+  // Falta corrigir
 }
 
 void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
