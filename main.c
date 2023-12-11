@@ -736,7 +736,7 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   if ((valueX >= 0 && i > 0 && result > valueX) || (valueX < 0 && i < 0 && result < valueX))
   {
-    registers[SR] |= OV_FLAG; // Erro
+    registers[SR] |= OV_FLAG;
   }
 
   if (result > 0xFFFFFFFF)
@@ -800,23 +800,23 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   if (dff == 0)
   {
-    registers[SR] = 0b00000001; // ZN
+    registers[SR] = ZN_FLAG; // ZN
   }
 
   if ((dff & 0x80000000)) // Check MSB
   {
-    registers[SR] |= 0b00010000; // SN
+    registers[SR] |= SN_FLAG; // SN
   }
 
   if ((valueX & 0x8FFFFFFF) != (i & 0x8FFFFFFF) &&
       ((dff & 0x8FFFFFF) != (valueX & 0x8FFFFFF)))
   {
-    registers[SR] |= 0b00001000; // OV
+    registers[SR] |= OV_FLAG; // OV
   }
 
   if ((dff & 0x80000000) == 1) // Check MSB
   {
-    registers[SR] |= 0b00000001; // CY
+    registers[SR] |= CY_FLAG; // CY
   }
 
   // Screen output formatting
@@ -1394,7 +1394,8 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
   char instruction[30] = {0};
 
   // Fetch operands
-  const int32_t i = (registers[IR] & 0x03FFFFFF) | ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const int32_t i = (registers[IR] & 0x03FFFFFF) |
+                    ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
 
   // Instruction formatting
   sprintf(instruction, "call %i", i);
