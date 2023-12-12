@@ -2,6 +2,7 @@
  * Libraries
  *******************************************************/
 
+#include <math.h>
 #include <stdint.h> // Integer types with specific widths.
 #include <stdlib.h> // General-purpose functions, including memory allocation and random number generation.
 #include <stdio.h>  // Standard Input/Output library for input and output operations.
@@ -96,7 +97,9 @@ int isSNSet(uint32_t registers[NUM_REGISTERS]);
 int isOVSet(uint32_t registers[NUM_REGISTERS]);
 int isIVSet(uint32_t registers[NUM_REGISTERS]);
 int isCYSet(uint32_t registers[NUM_REGISTERS]);
+
 char *formatRegisterName(uint8_t registerNumber, bool lower);
+int power(int base, int exponent);
 
 // Principal function
 int main(int argc, char *argv[])
@@ -175,173 +178,177 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
 
     const uint8_t opcode = (registers[IR] >> 26) & 0x3F;
 
-    switch (opcode)
+    if (registers[IR] != 0) // If it is not idle instruction
     {
-    case 0b000000: // mov
-      mov(registers, output);
-      break;
-    case 0b000001: // movs
-      movs(registers, output);
-      break;
-    case 0b000010: // add
-      add(registers, output);
-      break;
-    case 0b000011: // sub
-      sub(registers, output);
-      break;
-    case 0b000100: // mul, sll, muls, sla, div, srl, divs, sra
-      const uint8_t subOpcode = (registers[IR] >> 7) & 0x7;
-
-      switch (subOpcode)
+      switch (opcode)
       {
-      case 0b000: // mul
-        mul(registers, output);
+      case 0b000000: // mov
+        mov(registers, output);
         break;
-      case 0b001: // sll
-        sll(registers, output);
+      case 0b000001: // movs
+        movs(registers, output);
         break;
-      case 0b010: // muls
-        muls(registers, output);
+      case 0b000010: // add
+        add(registers, output);
         break;
-      case 0b011: // sla
-        sla(registers, output);
+      case 0b000011: // sub
+        sub(registers, output);
         break;
-      case 0b100: // div
-        divv(registers, output);
+      case 0b000100: // mul, sll, muls, sla, div, srl, divs, sra
+        const uint8_t subOpcode = (registers[IR] >> 8) & 0x7;
+
+        switch (subOpcode)
+        {
+        case 0b000: // mul
+          mul(registers, output);
+          break;
+        case 0b001: // sll
+          sll(registers, output);
+          break;
+        case 0b010: // muls
+          muls(registers, output);
+          break;
+        case 0b011: // sla
+          sla(registers, output);
+          break;
+        case 0b100: // div
+          divv(registers, output);
+          break;
+        case 0b101: // srl
+          srl(registers, output);
+          break;
+        case 0b110: // divs
+          divs(registers, output);
+          break;
+        case 0b111: // sra
+          sra(registers, output);
+          break;
+        }
+
         break;
-      case 0b101: // srl
-        srl(registers, output);
+      case 0b000101: // cmp
+        cmp(registers, output);
         break;
-      case 0b110: // divs
-        divs(registers, output);
+      case 0b000110: // and
+        and(registers, output);
         break;
-      case 0b111: // sra
-        sra(registers, output);
+      case 0b000111: // or
+        and(registers, output);
         break;
+      case 0b001000: // not
+        not(registers, output);
+        break;
+      case 0b001001: // xor
+        xor(registers, output);
+        break;
+      case 0b010010: // addi
+        addi(registers, output);
+        break;
+      case 0b010011: // subi
+        subi(registers, output);
+        break;
+      case 0b010100: // muli
+        muli(registers, output);
+        break;
+      case 0b010101: // divi
+        divi(registers, output);
+        break;
+      case 0b010110: // modi
+        modi(registers, output);
+        break;
+      case 0b010111: // cmpi
+        cmpi(registers, output);
+        break;
+
+      case 0b011000: // l8
+        l8(registers, mem8, output);
+        break;
+      case 0b011001: // l16
+        l16(registers, mem8, output);
+        break;
+      case 0b011010: // l32
+        l32(registers, mem8, output);
+        break;
+      case 0b011011: // s8
+        s8(registers, mem8, output);
+        break;
+      case 0b011100: // s16
+        s16(registers, mem8, output);
+        break;
+      case 0b011101: // s32
+        s32(registers, mem8, output);
+        break;
+
+      case 0b101010: // bae
+        bae(registers, output);
+        break;
+      case 0b101011: // bat
+        bat(registers, output);
+        break;
+      case 0b101100: // bbe
+        bbe(registers, output);
+        break;
+      case 0b101101: // bbt
+        bbt(registers, output);
+        break;
+      case 0b101110: // beq
+        beq(registers, output);
+        break;
+      case 0b101111: // bge
+        bge(registers, output);
+        break;
+      case 0b110000: // bgt
+        bgt(registers, output);
+        break;
+      case 0b110001: // biv
+        biv(registers, output);
+        break;
+      case 0b110010: // ble
+        ble(registers, output);
+        break;
+      case 0b110011: // blt
+        blt(registers, output);
+        break;
+      case 0b110100: // bne
+        bne(registers, output);
+        break;
+      case 0b110101: // bni
+        bni(registers, output);
+        break;
+      case 0b110110: // bnz
+        bnz(registers, output);
+        break;
+      case 0b110111: // bun
+        bun(registers, output);
+        break;
+      case 0b111000: // bzd
+        bzd(registers, output);
+        break;
+      case 0b111111: // int
+        interrupt(registers, &executa, output);
+        break;
+
+      case 0b011110: // call type F
+        callf(registers, mem8, output, &pcAlreadyIncremented);
+        break;
+      case 0b111001: // call type S
+        calls(registers, mem8, output, &pcAlreadyIncremented);
+        break;
+      case 0b011111: // ret
+        ret(registers, mem8, output, &pcAlreadyIncremented);
+        break;
+      case 0b001010: // push
+        push(registers, mem8, output);
+        break;
+      case 0b001011: // pop
+        pop(registers, mem8, output);
+        break;
+
+      default: // Instrucao desconhecida
+        printf("Instrucao desconhecida!\n");
+        // Parar a execucao
+        executa = 0;
       }
-      break;
-    case 0b000101: // cmp
-      cmp(registers, output);
-      break;
-    case 0b000110: // and
-      and(registers, output);
-      break;
-    case 0b000111: // or
-      and(registers, output);
-      break;
-    case 0b001000: // not
-      not(registers, output);
-      break;
-    case 0b001001: // xor
-      xor(registers, output);
-      break;
-    case 0b010010: // addi
-      addi(registers, output);
-      break;
-    case 0b010011: // subi
-      subi(registers, output);
-      break;
-    case 0b010100: // muli
-      muli(registers, output);
-      break;
-    case 0b010101: // divi
-      divi(registers, output);
-      break;
-    case 0b010110: // modi
-      modi(registers, output);
-      break;
-    case 0b010111: // cmpi
-      cmpi(registers, output);
-      break;
-
-    case 0b011000: // l8
-      l8(registers, mem8, output);
-      break;
-    case 0b011001: // l16
-      l16(registers, mem8, output);
-      break;
-    case 0b011010: // l32
-      l32(registers, mem8, output);
-      break;
-    case 0b011011: // s8
-      s8(registers, mem8, output);
-      break;
-    case 0b011100: // s16
-      s16(registers, mem8, output);
-      break;
-    case 0b011101: // s32
-      s32(registers, mem8, output);
-      break;
-
-    case 0b101010: // bae
-      bae(registers, output);
-      break;
-    case 0b101011: // bat
-      bat(registers, output);
-      break;
-    case 0b101100: // bbe
-      bbe(registers, output);
-      break;
-    case 0b101101: // bbt
-      bbt(registers, output);
-      break;
-    case 0b101110: // beq
-      beq(registers, output);
-      break;
-    case 0b101111: // bge
-      bge(registers, output);
-      break;
-    case 0b110000: // bgt
-      bgt(registers, output);
-      break;
-    case 0b110001: // biv
-      biv(registers, output);
-      break;
-    case 0b110010: // ble
-      ble(registers, output);
-      break;
-    case 0b110011: // blt
-      blt(registers, output);
-      break;
-    case 0b110100: // bne
-      bne(registers, output);
-      break;
-    case 0b110101: // bni
-      bni(registers, output);
-      break;
-    case 0b110110: // bnz
-      bnz(registers, output);
-      break;
-    case 0b110111: // bun
-      bun(registers, output);
-      break;
-    case 0b111000: // bzd
-      bzd(registers, output);
-      break;
-    case 0b111111: // int
-      interrupt(registers, &executa, output);
-      break;
-
-    case 0b011110: // call type F
-      callf(registers, mem8, output, &pcAlreadyIncremented);
-      break;
-    case 0b111001: // call type S
-      calls(registers, mem8, output, &pcAlreadyIncremented);
-      break;
-    case 0b011111: // ret
-      ret(registers, mem8, output, &pcAlreadyIncremented);
-      break;
-    case 0b001010: // push
-      push(registers, mem8, output);
-      break;
-    case 0b001011: // pop
-      pop(registers, mem8, output);
-      break;
-
-    default: // Instrucao desconhecida
-      printf("Instrucao desconhecida!\n");
-      // Parar a execucao
-      executa = 0;
     }
     if (!pcAlreadyIncremented)
       registers[PC] += 4; // PC = PC + 4 (next instruction)
@@ -560,9 +567,42 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
-  uint32_t x, y = 0;
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+  const int32_t l = (registers[IR] & 0x1F) |
+                    ((registers[IR] & 0x000010) ? 0xFFFFFFE0 : 0x00000000);
+  printf("%u\n", l);
+  // Instruction formatting
+  sprintf(instruction, "sla %s,%s,%s,%u",
+          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
 
-  // Falta fazer
+  // Execution of behavior
+  const uint64_t valueZ = registers[z];
+  const uint64_t valueY = registers[y];
+
+  const uint64_t result = ((valueZ << 32) | valueY) * power(2, l + 1);
+  registers[x] = result & 0xFFFFFFFF;
+  registers[z] = (result >> 32) & 0xFFFFFFFF;
+
+  if (result == 0)
+  {
+    registers[SR] |= ZN_FLAG;
+  }
+
+  if (registers[z] != 0)
+  {
+    registers[SR] |= OV_FLAG;
+  }
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\t%s:%s=%s:%s<<%u=0x%016lX,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, result, registers[SR]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\t%s:%s=%s:%s<<%u=0x%016lX,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, result, registers[SR]);
+
+  // Falta corrigir
 }
 
 void divv(uint32_t registers[NUM_REGISTERS], FILE *output)
@@ -1725,4 +1765,13 @@ char *formatRegisterName(uint8_t registerNumber, bool lower)
   }
 
   return result;
+}
+
+int power(int base, int exponent)
+{
+  if (exponent == 0)
+  {
+    return 1;
+  }
+  return base * power(base, exponent - 1);
 }
