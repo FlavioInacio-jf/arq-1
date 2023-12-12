@@ -661,9 +661,44 @@ void divs(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   char instruction[30] = {0};
 
-  uint32_t x, y = 0;
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+  const int32_t l = (registers[IR] & 0x1F) |
+                    ((registers[IR] & 0x000010) ? 0xFFFFFFE0 : 0x00000000);
 
-  // Falta fazer
+  // Instruction formatting
+  sprintf(instruction, "divs %s,%s,%s,%u",
+          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
+
+  // Execution of behavior
+  const uint32_t valueX = registers[x];
+  const uint32_t valueY = registers[y];
+
+  registers[l] = valueX % valueY;
+  registers[z] = valueX / valueY;
+
+  if (registers[z] == 0)
+  {
+    registers[SR] |= ZN_FLAG;
+  }
+
+  if (valueY == 0)
+  {
+    registers[SR] |= ZD_FLAG;
+  }
+
+  if (registers[l] != 0)
+  {
+    registers[SR] |= CY_FLAG;
+  }
+
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
 }
 
 void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
