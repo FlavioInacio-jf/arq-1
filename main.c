@@ -459,7 +459,7 @@ void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueY = (uint64_t)registers[y];
 
   const uint64_t result = valueX - valueY;
-  registers[z] = (uint32_t)result;
+  registers[z] = (result & 0xFFFFFFFF);
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -1696,9 +1696,6 @@ void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *p
 
 void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
-  char instruction[50] = {0};
-  char valuesRegistry[100] = {0};
-
   // Fetch operands
   const uint32_t v = (registers[IR] >> 6) & 0x1F;
   const uint32_t w = registers[IR] & 0x1F;
@@ -1708,65 +1705,56 @@ void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   const uint32_t operands[] = {v, w, x, y, z};
 
-  // Instruction formatting
-  int charsWritten = sprintf(instruction, "push ");
-  int charsRegister = sprintf(valuesRegistry, "{");
-
-  for (uint8_t i = 0; i < 5; i++)
-  {
-    const uint32_t operand = operands[i];
-    if (operand != 0)
-    {
-      // Instruction
-      charsWritten += sprintf(instruction + charsWritten, "%s%s", (i > 0) ? (",") : (""), formatRegisterName(operand, true));
-
-      // Values ​​in the registry
-      charsRegister += sprintf(valuesRegistry + charsRegister, "0x%08X%s", registers[operand], (i > 0) ? (",") : (""));
-    }
-
-    // Add braces at the end for values ​​and initial braces for labels
-    if (i == 4)
-    {
-      charsRegister += sprintf(valuesRegistry + charsRegister, "}={");
-    }
-  }
-
-  // Add register labels
-  for (uint8_t i = 0; i < 5; i++)
-  {
-    const uint32_t operand = operands[i];
-    if (operand != 0)
-    {
-      // Values ​​in the registry
-      charsRegister += sprintf(valuesRegistry + charsRegister, "%s%s", formatRegisterName(i + 1, false), (i > 0) ? (",") : (""));
-    }
-
-    if (i == 4)
-    {
-      charsRegister += sprintf(valuesRegistry + charsRegister, "}");
-    }
-  }
-
   // Execution of behavior
+  const uint32_t oldSP = registers[SP];
   for (uint8_t i = 0; i < 5; i++)
   {
     const uint32_t operand = operands[i];
-    if (operand != 0)
-    {
-      mem8[registers[SP] + 0] = (registers[operand] >> 24) & 0xFF;
-      mem8[registers[SP] + 1] = (registers[operand] >> 16) & 0xFF;
-      mem8[registers[SP] + 2] = (registers[operand] >> 8) & 0xFF;
-      mem8[registers[SP] + 3] = (registers[operand]) & 0xFF;
+    if (operand == 0)
+      break;
 
-      registers[SP] -= 4;
-    }
+    mem8[registers[SP] + 0] = (registers[operand] >> 24) & 0xFF;
+    mem8[registers[SP] + 1] = (registers[operand] >> 16) & 0xFF;
+    mem8[registers[SP] + 2] = (registers[operand] >> 8) & 0xFF;
+    mem8[registers[SP] + 3] = (registers[operand]) & 0xFF;
+
+    registers[SP] -= 4;
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tMEM[0x%08X]%s\n", registers[PC], instruction, registers[SP], valuesRegistry);
+  // Instruction formatting
+  char instruction[50] = {0};
+  char additionalInfo[300] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]%s\n", registers[PC], instruction, registers[SP], valuesRegistry);
+  char registerValues[100] = {0};
+  char registerLabels[100] = {0};
+
+  int tempInstruction = sprintf(instruction, "push %s", (operands[0] == 0) ? ("-") : (""));
+  int tempValues = sprintf(registerValues, "%s", "");
+  int tempLabels = sprintf(registerLabels, "%s", "");
+
+  for (uint8_t i = 0; i < 5; i++)
+  {
+    const uint32_t operand = operands[i];
+    if (operand == 0)
+      break;
+
+    // Instruction
+    tempInstruction += sprintf(instruction + tempInstruction, "%s%s",
+                               (i > 0) ? (",") : (""), formatRegisterName(operand, true));
+
+    // Register Values
+    tempValues += sprintf(registerValues + tempValues, "%s0x%08X",
+                          (i > 0) ? (",") : (""), registers[operand]);
+
+    // Register Labels
+    tempLabels += sprintf(registerLabels + tempLabels, "%s%s",
+                          (i > 0) ? (",") : (""), formatRegisterName(operand, false));
+  }
+
+  sprintf(additionalInfo, "MEM[0x%08X]{%s}={%s}", oldSP, registerValues, registerLabels);
+
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
