@@ -61,21 +61,21 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output);
 void modi(uint32_t registers[NUM_REGISTERS], FILE *output);
 void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output);
 
-void bae(uint32_t registers[NUM_REGISTERS], FILE *output);
-void bat(uint32_t registers[NUM_REGISTERS], FILE *output);
-void bbe(uint32_t registers[NUM_REGISTERS], FILE *output);
-void bbt(uint32_t registers[NUM_REGISTERS], FILE *output);
-void beq(uint32_t registers[NUM_REGISTERS], FILE *output);
-void bge(uint32_t registers[NUM_REGISTERS], FILE *output);
-void bgt(uint32_t registers[NUM_REGISTERS], FILE *output);
-void biv(uint32_t registers[NUM_REGISTERS], FILE *output);
-void ble(uint32_t registers[NUM_REGISTERS], FILE *output);
-void blt(uint32_t registers[NUM_REGISTERS], FILE *output);
-void bne(uint32_t registers[NUM_REGISTERS], FILE *output);
-void bni(uint32_t registers[NUM_REGISTERS], FILE *output);
-void bnz(uint32_t registers[NUM_REGISTERS], FILE *output);
-void bzd(uint32_t registers[NUM_REGISTERS], FILE *output);
-void bun(uint32_t registers[NUM_REGISTERS], FILE *output);
+void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
 void interrupt(uint32_t registers[NUM_REGISTERS], bool *executa, FILE *output);
 
 void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
@@ -98,6 +98,7 @@ int isOVSet(uint32_t registers[NUM_REGISTERS]);
 int isIVSet(uint32_t registers[NUM_REGISTERS]);
 int isCYSet(uint32_t registers[NUM_REGISTERS]);
 
+uint32_t extendSign(uint8_t value, int significantBit);
 char *formatRegisterName(uint8_t registerNumber, bool lower);
 int power(int base, int exponent);
 
@@ -280,49 +281,49 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         break;
 
       case 0b101010: // bae
-        bae(registers, output);
+        bae(registers, output, &pcAlreadyIncremented);
         break;
       case 0b101011: // bat
-        bat(registers, output);
+        bat(registers, output, &pcAlreadyIncremented);
         break;
       case 0b101100: // bbe
-        bbe(registers, output);
+        bbe(registers, output, &pcAlreadyIncremented);
         break;
       case 0b101101: // bbt
-        bbt(registers, output);
+        bbt(registers, output, &pcAlreadyIncremented);
         break;
       case 0b101110: // beq
-        beq(registers, output);
+        beq(registers, output, &pcAlreadyIncremented);
         break;
       case 0b101111: // bge
-        bge(registers, output);
+        bge(registers, output, &pcAlreadyIncremented);
         break;
       case 0b110000: // bgt
-        bgt(registers, output);
+        bgt(registers, output, &pcAlreadyIncremented);
         break;
       case 0b110001: // biv
-        biv(registers, output);
+        biv(registers, output, &pcAlreadyIncremented);
         break;
       case 0b110010: // ble
-        ble(registers, output);
+        ble(registers, output, &pcAlreadyIncremented);
         break;
       case 0b110011: // blt
-        blt(registers, output);
+        blt(registers, output, &pcAlreadyIncremented);
         break;
       case 0b110100: // bne
-        bne(registers, output);
+        bne(registers, output, &pcAlreadyIncremented);
         break;
       case 0b110101: // bni
-        bni(registers, output);
+        bni(registers, output, &pcAlreadyIncremented);
         break;
       case 0b110110: // bnz
-        bnz(registers, output);
+        bnz(registers, output, &pcAlreadyIncremented);
         break;
       case 0b110111: // bun
-        bun(registers, output);
+        bun(registers, output, &pcAlreadyIncremented);
         break;
       case 0b111000: // bzd
-        bzd(registers, output);
+        bzd(registers, output, &pcAlreadyIncremented);
         break;
       case 0b111111: // int
         interrupt(registers, &executa, output);
@@ -909,7 +910,6 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
           formatRegisterName(z, true), formatRegisterName(x, true), i);
 
   // Execution of behavior
-  registers[SR] = 0x00000000; // Reset Status Register
   const uint64_t valueX = (uint64_t)registers[x];
 
   const uint64_t result = valueX + (uint64_t)i;
@@ -1130,297 +1130,297 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
  * Flow Control Operations
  *******************************************************/
 
-void bae(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bae %u", label);
+  sprintf(instruction, "bae %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (!isCYSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void bat(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bat %u", label);
+  sprintf(instruction, "bat %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (!isZNSet(registers) && !isCYSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void bbe(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bbe %u", label);
+  sprintf(instruction, "bbe %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (isZNSet(registers) || isCYSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void bbt(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bbt %u", label);
+  sprintf(instruction, "bbt %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (isCYSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void beq(uint32_t registers[NUM_REGISTERS], FILE *output)
+void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "beq %u", label);
+  sprintf(instruction, "beq %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (isZNSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void bge(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bge %u", label);
+  sprintf(instruction, "bge %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (isSNSet(registers) == isOVSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void bgt(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bgt %u", label);
+  sprintf(instruction, "bgt %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (!isZNSet(registers) && (isSNSet(registers) == isOVSet(registers)))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void biv(uint32_t registers[NUM_REGISTERS], FILE *output)
+void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "biv %u", label);
+  sprintf(instruction, "biv %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (isIVSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void ble(uint32_t registers[NUM_REGISTERS], FILE *output)
+void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "ble %u", label);
+  sprintf(instruction, "ble %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (isZNSet(registers) || (isSNSet(registers) != isOVSet(registers)))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void blt(uint32_t registers[NUM_REGISTERS], FILE *output)
+void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "blt %u", label);
+  sprintf(instruction, "blt %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (isSNSet(registers) != isOVSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void bne(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bne %u", label);
+  sprintf(instruction, "bne %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (!isZNSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void bni(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bni %u", label);
+  sprintf(instruction, "bni %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (!isIVSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
@@ -1430,76 +1430,76 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output)
   fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
 }
 
-void bnz(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bnz %u", label);
+  sprintf(instruction, "bnz %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (!isZDSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void bzd(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bzd %u", label);
+  sprintf(instruction, "bzd %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   if (isZDSet(registers))
   {
-    registers[PC] = registers[PC] + (label << 2);
+    *(pcAlreadyIncremented) = true;
+    registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
-void bun(uint32_t registers[NUM_REGISTERS], FILE *output)
+void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   char instruction[30] = {0};
 
   // Fetch operands
-  const uint32_t label = (registers[IR] & 0x03FFFFFF) |
-                         ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
-  sprintf(instruction, "bun %u", label);
+  sprintf(instruction, "bun %u", i);
 
   // Execution of behavior
+  *(pcAlreadyIncremented) = true;
   const uint32_t oldPC = registers[PC];
-  registers[PC] = registers[PC] + (label << 2);
+  registers[PC] = registers[PC] + 4 + (i << 2);
 
   // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 
   // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
 }
 
 void interrupt(uint32_t registers[NUM_REGISTERS], bool *executa, FILE *output)
@@ -1679,8 +1679,7 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
 
   // Fetch operands
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = (registers[IR] & 0xFFFF) |
-                    ((registers[IR] & 0x00004000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0xFFFF, 16);
 
   // Instruction formatting
   sprintf(instruction, "call [%s%s%i]",
@@ -1710,8 +1709,7 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
   char instruction[30] = {0};
 
   // Fetch operands
-  const int32_t i = (registers[IR] & 0x03FFFFFF) |
-                    ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
+  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Instruction formatting
   sprintf(instruction, "call %i", i);
@@ -1948,6 +1946,16 @@ int isZNSet(uint32_t registers[NUM_REGISTERS])
 /******************************************************
  * Utility Functions
  *******************************************************/
+
+uint32_t extendSign(uint8_t value, int significantBit)
+{
+  if (value & (1 << significantBit - 1))
+  {
+    const uint32_t mask = (1 << (32 - significantBit)) - 1;
+    return value | (mask << significantBit);
+  }
+  return value;
+}
 
 char *formatRegisterName(uint8_t registerNumber, bool lower)
 {
