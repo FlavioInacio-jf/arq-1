@@ -553,43 +553,36 @@ void muls(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
   const uint8_t y = (registers[IR] >> 11) & 0x1F;
-  const int32_t l = registers[IR] & 0x1F;
-
-  // Instruction formatting
-  sprintf(instruction, "sla %s,%s,%s,%u",
-          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
+  const uint8_t l = registers[IR] & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueZ = registers[z];
-  const uint64_t valueY = registers[y];
+  const uint64_t valueZ = (uint64_t)registers[z];
+  const uint64_t valueY = (uint64_t)registers[y];
 
-  const uint64_t result = ((valueZ << 32) | valueY) * power(2, l + 1);
+  const uint64_t result = ((valueZ << 32) | valueY) << (l + 1);
   registers[x] = result & 0xFFFFFFFF;
   registers[z] = (result >> 32) & 0xFFFFFFFF;
 
   if (result == 0)
-  {
     registers[SR] |= ZN_FLAG;
-  }
 
-  if (registers[z] != 0)
-  {
+  if (valueZ != 0)
     registers[SR] |= OV_FLAG;
-  }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\t%s:%s=%s:%s<<%u=0x%016lX,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, result, registers[SR]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[50] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\t%s:%s=%s:%s<<%u=0x%016lX,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, result, registers[SR]);
+  sprintf(instruction, "sla %s,%s,%s,%u",
+          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
+  sprintf(additionalInfo, "%s:%s=%s:%s<<%u=0x%016lX,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, result, registers[SR]);
 
-  // Falta corrigir
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 void divv(uint32_t registers[NUM_REGISTERS], FILE *output)
