@@ -99,6 +99,7 @@ int isIVSet(uint32_t registers[NUM_REGISTERS]);
 int isCYSet(uint32_t registers[NUM_REGISTERS]);
 
 uint32_t extendSign(uint8_t value, int significantBit);
+void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo);
 char *formatRegisterName(uint8_t registerNumber, bool lower);
 int power(int base, int exponent);
 
@@ -1132,13 +1133,8 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bae %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1148,22 +1144,21 @@ void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "bae %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bat %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1173,22 +1168,21 @@ void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "bat %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bbe %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1198,22 +1192,21 @@ void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "bbe %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bbt %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1223,22 +1216,21 @@ void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "bbt %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "beq %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1248,22 +1240,21 @@ void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "beq %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bge %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1273,22 +1264,21 @@ void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "bge %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bgt %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1298,22 +1288,21 @@ void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "bgt %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "biv %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1323,22 +1312,21 @@ void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "biv %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "ble %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1348,22 +1336,21 @@ void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "ble %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "blt %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1373,22 +1360,21 @@ void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "blt %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bne %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1398,22 +1384,21 @@ void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "bne %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bni %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1423,22 +1408,21 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC] + 4);
+  sprintf(instruction, "bni %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bnz %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1448,22 +1432,21 @@ void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "bnz %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bzd %u", i);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1473,52 +1456,47 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
     registers[PC] = registers[PC] + 4 + (i << 2);
   }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "bzd %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "bun %u", i);
 
   // Execution of behavior
   *(pcAlreadyIncremented) = true;
   const uint32_t oldPC = registers[PC];
   registers[PC] = registers[PC] + 4 + (i << 2);
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", oldPC, instruction, registers[PC]);
+  sprintf(instruction, "bun %u", i);
+  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void interrupt(uint32_t registers[NUM_REGISTERS], bool *executa, FILE *output)
 {
-  char instruction[30] = {0};
-
-  // Instruction formatting
-  sprintf(instruction, "int 0");
-
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
   (*executa) = 0;
   memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", oldPC, instruction);
-
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", oldPC, instruction);
+  // Output
+  printInstruction(oldPC, output, "int 0", "CR=0x00000000,PC=0x00000000");
 }
 
 /******************************************************
@@ -1955,6 +1933,15 @@ uint32_t extendSign(uint8_t value, int significantBit)
     return value | (mask << significantBit);
   }
   return value;
+}
+
+void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo)
+{
+  // Screen output formatting
+  printf("0x%08X:\t%-25s\t%s\n", pc, instruction, additionalInfo);
+
+  // Output formatting to file
+  fprintf(output, "0x%08X:\t%-25s\t%s\n", pc, instruction, additionalInfo);
 }
 
 char *formatRegisterName(uint8_t registerNumber, bool lower)
