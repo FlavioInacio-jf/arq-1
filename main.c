@@ -98,7 +98,7 @@ int isOVSet(uint32_t registers[NUM_REGISTERS]);
 int isIVSet(uint32_t registers[NUM_REGISTERS]);
 int isCYSet(uint32_t registers[NUM_REGISTERS]);
 
-uint32_t extendSign(uint8_t value, int significantBit);
+int32_t extendSign(uint32_t value, uint8_t significantBit);
 void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo);
 char *formatRegisterName(uint8_t registerNumber, bool lower);
 int power(int base, int exponent);
@@ -424,7 +424,6 @@ void add(uint32_t registers[NUM_REGISTERS], FILE *output)
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
 
   // Execution of behavior
-  registers[SR] = 0x00000000; // Reset Status Register
   const uint64_t valueX = (uint64_t)registers[x];
   const uint64_t valueY = (uint64_t)registers[y];
 
@@ -472,7 +471,6 @@ void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
 
   // Execution of behavior
-  registers[SR] = 0x00000000; // Reset Status Register
   const uint64_t valueX = (uint64_t)registers[x];
   const uint64_t valueY = (uint64_t)registers[y];
 
@@ -521,7 +519,6 @@ void mul(uint32_t registers[NUM_REGISTERS], FILE *output)
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
 
   // Execution of behavior
-  registers[SR] = 0x00000000; // Reset Status Register
   const uint64_t valueX = (uint64_t)registers[x];
   const uint64_t valueY = (uint64_t)registers[y];
 
@@ -572,8 +569,7 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
   const uint8_t y = (registers[IR] >> 11) & 0x1F;
-  const int32_t l = (registers[IR] & 0x1F) |
-                    ((registers[IR] & 0x000010) ? 0xFFFFFFE0 : 0x00000000);
+  const int32_t l = registers[IR] & 0x1F;
 
   // Instruction formatting
   sprintf(instruction, "sla %s,%s,%s,%u",
@@ -723,7 +719,6 @@ void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
   sprintf(instruction, "cmp %s,%s", formatRegisterName(x, true), formatRegisterName(y, true));
 
   // Execution of behavior
-  registers[SR] = 0x00000000; // Reset Status Register
   const uint64_t valueX = (uint64_t)registers[x];
   const uint64_t valueY = (uint64_t)registers[y];
 
@@ -958,7 +953,6 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
           formatRegisterName(z, true), formatRegisterName(x, true), i);
 
   // Execution of behavior
-  registers[SR] = 0x00000000; // Reset Status Register
   const uint64_t valueX = (uint64_t)registers[x];
 
   const uint64_t result = valueX - (uint64_t)i;
@@ -1096,7 +1090,6 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
   sprintf(instruction, "cmpi r%u,%i", x, i);
 
   // Execution of behavior
-  registers[SR] = 0x00000000; // Reset Status Register
   const int32_t dff = valueX - i;
 
   if (dff == 0)
@@ -1651,7 +1644,7 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
 
   // Fetch operands
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint32_t i = extendSign(registers[IR] & 0xFFFF, 16);
+  const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
 
   // Instruction formatting
   sprintf(instruction, "call [%s%s%i]",
@@ -1678,13 +1671,8 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
 
 void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
-
-  // Instruction formatting
-  sprintf(instruction, "call %i", i);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
@@ -1699,11 +1687,16 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
   registers[PC] = registers[PC] + 4 + (i << 2);
   registers[SP] = registers[SP] - 4;
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[42] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
+  // Instruction formatting
+  sprintf(instruction, "call %i", i);
+  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", oldPC, registers[SP] + 4, oldPC + 4);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
@@ -1919,14 +1912,10 @@ int isZNSet(uint32_t registers[NUM_REGISTERS])
  * Utility Functions
  *******************************************************/
 
-uint32_t extendSign(uint8_t value, int significantBit)
+int32_t extendSign(uint32_t value, uint8_t significantBit)
 {
-  if (value & (1 << significantBit - 1))
-  {
-    const uint32_t mask = (1 << (32 - significantBit)) - 1;
-    return value | (mask << significantBit);
-  }
-  return value;
+  const uint32_t bitSignalDefined = value & (1 << (significantBit - 1));
+  return (bitSignalDefined ? (value | (0xFFFFFFFF << (significantBit))) : value);
 }
 
 void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo)
