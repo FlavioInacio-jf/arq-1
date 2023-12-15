@@ -369,8 +369,6 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
 
 void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint8_t z = (registers[IR] & 0x03E00000) >> 21;
   const uint32_t xyl = registers[IR] & 0x1FFFFF;
@@ -379,13 +377,14 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
   registers[z] = xyl;
 
   // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
+
   sprintf(instruction, "mov %s,%u", formatRegisterName(z, true), xyl);
+  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), xyl);
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\t%s=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), xyl);
-
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), xyl);
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
