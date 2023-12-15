@@ -1640,15 +1640,9 @@ void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
 void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
   const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
-
-  // Instruction formatting
-  sprintf(instruction, "call [%s%s%i]",
-          formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
 
   // Execution of behavior
   *(pcAlreadyIncremented) = true; // Prevent it from being incremented
@@ -1662,11 +1656,16 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
   registers[PC] = (registers[x] + i) << 2;
   registers[SP] -= 4;
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[42] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[PC], registers[SP] + 4, oldPC + 4);
+  sprintf(instruction, "call [%s%s%i]",
+          formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
+  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", registers[PC], registers[SP] + 4, oldPC + 4);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
@@ -1691,7 +1690,6 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
   char instruction[30] = {0};
   char additionalInfo[42] = {0};
 
-  // Instruction formatting
   sprintf(instruction, "call %i", i);
   sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", oldPC, registers[SP] + 4, oldPC + 4);
 
