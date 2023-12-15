@@ -563,14 +563,16 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueZ = (uint64_t)registers[z];
   const uint64_t valueY = (uint64_t)registers[y];
 
-  const uint64_t result = ((valueZ << 32) | valueY) << (l + 1);
+  const int64_t result = z != 0 ? ((valueZ << 32) | valueY) << (l + 1) : valueY << (l + 1);
   registers[x] = result & 0xFFFFFFFF;
-  registers[z] = (result >> 32) & 0xFFFFFFFF;
+
+  if (z != 0)
+    registers[z] = (result >> 32) & 0xFFFFFFFF;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
 
-  if (valueZ != 0)
+  if (registers[z] != 0)
     registers[SR] |= OV_FLAG;
 
   // Instruction formatting
