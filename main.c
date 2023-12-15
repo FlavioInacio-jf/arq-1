@@ -409,16 +409,10 @@ void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 void add(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
   const uint8_t y = (registers[IR] >> 11) & 0x1F;
-
-  // Instruction formatting
-  sprintf(instruction, "add %s,%s,%s",
-          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
 
   // Execution of behavior
   const uint64_t valueX = (uint64_t)registers[x];
@@ -428,30 +422,29 @@ void add(uint32_t registers[NUM_REGISTERS], FILE *output)
   registers[z] = (uint32_t)result;
 
   if (result == 0)
-  {
     registers[SR] |= ZN_FLAG;
-  }
 
-  if ((result & 0x80000000)) // Check MSB
-  {
+  if ((result & 0x80000000))
     registers[SR] |= SN_FLAG;
-  }
 
-  if ((valueX > 0 && valueY > 0 && result <= 0) || (valueX < 0 && valueY < 0 && result >= 0))
-  {
+  if (
+      ((valueX & 0x80000000) == (valueY & 0x80000000)) &&
+      ((result & 0x80000000) != (valueX & 0x80000000)))
     registers[SR] |= OV_FLAG;
-  }
 
   if (result > 0xFFFFFFFF)
-  {
     registers[SR] |= CY_FLAG;
-  }
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  sprintf(instruction, "add %s,%s,%s",
+          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
+  sprintf(additionalInfo, "%s=%s+%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
