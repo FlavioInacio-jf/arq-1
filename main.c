@@ -1691,7 +1691,7 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
   char additionalInfo[42] = {0};
 
   sprintf(instruction, "call %i", i);
-  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", oldPC, registers[SP] + 4, oldPC + 4);
+  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", registers[PC], registers[SP] + 4, oldPC + 4);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
