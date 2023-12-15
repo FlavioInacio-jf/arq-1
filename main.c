@@ -389,24 +389,22 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint8_t z = (registers[IR] & 0x03E00000) >> 21;
-  const int32_t xyl = (registers[IR] & 0x1FFFFF) |
-                      ((registers[IR] & 0x100000) ? 0xFFF00000 : 0x00000000);
+  const int32_t xyl = extendSign(registers[IR] & 0x1FFFFF, 21);
 
   // Execution of behavior
   registers[z] = xyl;
 
   // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
+
   sprintf(instruction, "movs %s,%i", formatRegisterName(z, true), xyl);
+  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), xyl);
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\t%s=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), xyl);
-
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), xyl);
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 void add(uint32_t registers[NUM_REGISTERS], FILE *output)
