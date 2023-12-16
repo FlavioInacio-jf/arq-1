@@ -1021,7 +1021,7 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
   printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
-void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
+    void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
@@ -1650,17 +1650,18 @@ void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t i = registers[IR] & 0xFFFF;
+  const uint32_t i = registers[IR] & 0xFFFF;
 
   // Execution of behavior
-  registers[z] = mem8[registers[x] + i];
+  const uint32_t memoryAddress = (x != 0) ? registers[x] + i : i;
+  registers[z] = mem8[memoryAddress];
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[50] = {0};
 
-  sprintf(instruction, "l8 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
-  sprintf(additionalInfo, "R%u=MEM[0x%08X]=0x%08X", z, registers[x] + i, registers[z]);
+  sprintf(instruction, "l8 %s,[%s%s%i]", formatRegisterName(z, true), formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
+  sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%02X", formatRegisterName(z, false), memoryAddress, registers[z]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
