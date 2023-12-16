@@ -375,7 +375,8 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint32_t xyl = registers[IR] & 0x1FFFFF;
 
   // Execution of behavior
-  registers[z] = xyl;
+  if (z != 0)
+    registers[z] = xyl;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -395,7 +396,8 @@ void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
   const int32_t xyl = extendSign32(registers[IR] & 0x1FFFFF, 21);
 
   // Execution of behavior
-  registers[z] = xyl;
+  if (z != 0)
+    registers[z] = xyl;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -420,7 +422,9 @@ void add(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueY = (uint64_t)registers[y];
 
   const uint64_t result = valueX + valueY;
-  registers[z] = (uint32_t)result;
+
+  if (z != 0)
+    registers[z] = (uint32_t)result;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -468,7 +472,9 @@ void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueY = (uint64_t)registers[y];
 
   const uint64_t result = valueX - valueY;
-  registers[z] = (result & 0xFFFFFFFF);
+
+  if (z != 0)
+    registers[z] = (result & 0xFFFFFFFF);
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -517,8 +523,12 @@ void mul(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint32_t valueY = registers[y];
 
   const uint64_t result = valueX * valueY;
-  registers[z] = (uint32_t)result;
-  registers[l] = (result >> 32) & 0xFFFFFFFF;
+
+  if (z != 0)
+    registers[z] = (uint32_t)result;
+
+  if (l != 0)
+    registers[l] = (result >> 32) & 0xFFFFFFFF;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -555,7 +565,9 @@ void sll(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueY = (uint64_t)registers[y];
 
   const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) << (l + 1) : valueY << (l + 1);
-  registers[x] = result & 0xFFFFFFFF;
+
+  if (x != 0)
+    registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
   {
@@ -597,8 +609,12 @@ void muls(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint32_t valueY = registers[y];
 
   const uint64_t result = valueX * valueY;
-  registers[z] = (uint32_t)result;
-  registers[l] = (result >> 32) & 0xFFFFFFFF;
+
+  if (z != 0)
+    registers[z] = (uint32_t)result;
+
+  if (l != 0)
+    registers[l] = (result >> 32) & 0xFFFFFFFF;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -635,7 +651,9 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueY = (uint64_t)registers[y];
 
   const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) << (l + 1) : valueY << (l + 1);
-  registers[x] = result & 0xFFFFFFFF;
+
+  if (z != 0)
+    registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
   {
@@ -678,8 +696,11 @@ void divv(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   if (valueY != 0)
   {
-    registers[z] = valueX / valueY;
-    registers[l] = valueX % valueY;
+    if (z != 0)
+      registers[z] = valueX / valueY;
+
+    if (l != 0)
+      registers[l] = valueX % valueY;
 
     if (registers[z] == 0)
       registers[SR] |= ZN_FLAG;
@@ -722,7 +743,9 @@ void srl(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueY = (uint64_t)registers[y];
 
   const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) >> (l + 1) : valueY >> (l + 1);
-  registers[x] = result & 0xFFFFFFFF;
+
+  if (x != 0)
+    registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
   {
@@ -765,8 +788,11 @@ void divs(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   if (valueY != 0)
   {
-    registers[l] = valueX % valueY;
-    registers[z] = valueX / valueY;
+    if (l != 0)
+      registers[l] = valueX % valueY;
+
+    if (z != 0)
+      registers[z] = valueX / valueY;
 
     if (registers[z] == 0)
       registers[SR] |= ZN_FLAG;
@@ -850,7 +876,9 @@ void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueY = (uint64_t)registers[y];
 
   const uint64_t result = valueX - valueY;
-  registers[z] = (result & 0xFFFFFFFF);
+
+  if (z != 0)
+    registers[z] = (result & 0xFFFFFFFF);
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -897,7 +925,9 @@ void and (uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint32_t valueY = (uint32_t)registers[y];
 
   const uint32_t result = valueX & valueY;
-  registers[z] = result;
+
+  if (z != 0)
+    registers[z] = result;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -932,7 +962,9 @@ void or (uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint32_t valueY = (uint32_t)registers[y];
 
   const uint32_t result = valueX | valueY;
-  registers[z] = result;
+
+  if (z != 0)
+    registers[z] = result;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -965,7 +997,9 @@ void not(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint32_t valueX = (uint32_t)registers[x];
 
   const uint32_t result = ~valueX;
-  registers[z] = result;
+
+  if (z != 0)
+    registers[z] = result;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -999,7 +1033,9 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
   const uint32_t valueY = (uint32_t)registers[y];
 
   const uint32_t result = valueX ^ valueY;
-  registers[z] = result;
+
+  if (z != 0)
+    registers[z] = result;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -1033,7 +1069,9 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
   const uint64_t valueX = (uint64_t)registers[x];
 
   const uint64_t result = valueX + (uint64_t)i;
-  registers[z] = (uint32_t)result;
+
+  if (z != 0)
+    registers[z] = (uint32_t)result;
 
   if (registers[z] == 0)
     registers[SR] |= ZN_FLAG;
@@ -1080,7 +1118,9 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueX = (uint64_t)registers[x];
 
   const uint64_t result = valueX - i;
-  registers[z] = (result & 0xFFFFFFFF);
+
+  if (z != 0)
+    registers[z] = (result & 0xFFFFFFFF);
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -1127,7 +1167,9 @@ void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint32_t valueX = registers[x];
 
   const uint64_t result = valueX * i;
-  registers[z] = (uint32_t)result;
+
+  if (z != 0)
+    registers[z] = (uint32_t)result;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -1163,7 +1205,8 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   if (i != 0)
   {
-    registers[z] = valueX / i;
+    if (z != 0)
+      registers[z] = valueX / i;
 
     if (registers[z] == 0)
       registers[SR] |= ZN_FLAG;
@@ -1201,7 +1244,8 @@ void modi(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Execution of behavior
   const uint32_t valueX = registers[x];
 
-  registers[z] = valueX % i;
+  if (z != 0)
+    registers[z] = valueX % i;
 
   if (registers[z] == 0)
     registers[SR] |= ZN_FLAG;
@@ -1231,19 +1275,19 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   // Fetch operands
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
+  const int64_t i = extendSign64(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
   const uint64_t valueX = (uint64_t)registers[x];
-  const uint64_t result = valueX - i;
+  const uint64_t result = valueX - (uint64_t)i;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    registers[SR] |= ZN_FLAG; // error
   else
     registers[SR] &= ~ZN_FLAG;
 
   if ((result & 0x80000000))
-    registers[SR] |= SN_FLAG;
+    registers[SR] |= SN_FLAG; // error
   else
     registers[SR] &= ~SN_FLAG;
 
@@ -1262,7 +1306,7 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
   char additionalInfo[50] = {0};
 
-  sprintf(instruction, "cmpi %s,%i", formatRegisterName(x, true), i);
+  sprintf(instruction, "cmpi %s,%ld", formatRegisterName(x, true), i);
   sprintf(additionalInfo, "SR=0x%08X", registers[SR]);
 
   // Output
@@ -1655,7 +1699,9 @@ void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? registers[x] + i : i;
-  registers[z] = mem8[memoryAddress];
+
+  if (z != 0)
+    registers[z] = mem8[memoryAddress];
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1677,8 +1723,10 @@ void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 1) : i << 1;
-  registers[z] = ((mem8[memoryAddress] << 24) |
-                  (mem8[memoryAddress + 1] << 16));
+
+  if (z != 0)
+    registers[z] = ((mem8[memoryAddress] << 24) |
+                    (mem8[memoryAddress + 1] << 16));
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1700,10 +1748,12 @@ void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 2) : i << 2;
-  registers[z] = ((mem8[memoryAddress] << 24) |
-                  (mem8[memoryAddress + 1] << 16) |
-                  (mem8[memoryAddress + 2] << 8) |
-                  (mem8[memoryAddress + 3] << 0));
+
+  if (z != 0)
+    registers[z] = ((mem8[memoryAddress] << 24) |
+                    (mem8[memoryAddress + 1] << 16) |
+                    (mem8[memoryAddress + 2] << 8) |
+                    (mem8[memoryAddress + 3] << 0));
 
   // Instruction formatting
   char instruction[30] = {0};
