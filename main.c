@@ -2,7 +2,6 @@
  * Libraries
  *******************************************************/
 
-#include <math.h>
 #include <stdint.h> // Integer types with specific widths.
 #include <stdlib.h> // General-purpose functions, including memory allocation and random number generation.
 #include <stdio.h>  // Standard Input/Output library for input and output operations.
