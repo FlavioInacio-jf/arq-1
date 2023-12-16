@@ -1105,11 +1105,11 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[40] = {0};
 
   sprintf(instruction, "subi %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
-  sprintf(additionalInfo, "%s=%s-%i=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s-0x%08X=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
