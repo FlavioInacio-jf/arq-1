@@ -1720,17 +1720,18 @@ void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t i = registers[IR] & 0xFFFF;
+  const uint16_t i = registers[IR] & 0xFFFF;
 
   // Execution of behavior
-  mem8[registers[x] + i] = registers[z];
+  const uint32_t memoryAddress = (x != 0) ? registers[x] + i : i;
+  mem8[memoryAddress] = registers[z];
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "s8 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
-  sprintf(additionalInfo, "MEM[0x%08X]=R%u=0x%08X", registers[x] + i, z, registers[z]);
+  sprintf(instruction, "s8 [%s%s%i], %s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
+  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%02X", memoryAddress, formatRegisterName(z, false), registers[z]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
