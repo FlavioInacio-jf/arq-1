@@ -886,37 +886,37 @@ void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 void and (uint32_t registers[NUM_REGISTERS], FILE *output)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint32_t x = (registers[IR] >> 16) & 0x1F;
-  const uint32_t y = (registers[IR] >> 11) & 0x1F;
-
-  // Instruction formatting
-  sprintf(instruction, "and %s,%s,%s", formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t y = (registers[IR] >> 11) & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueX = (uint32_t)registers[x];
-  const uint64_t valueY = (uint32_t)registers[y];
+  const uint32_t valueX = (uint32_t)registers[x];
+  const uint32_t valueY = (uint32_t)registers[y];
 
   const uint32_t result = valueX & valueY;
   registers[z] = result;
 
   if (result == 0)
-  {
     registers[SR] |= ZN_FLAG;
-  }
+  else
+    registers[SR] &= ~ZN_FLAG;
 
-  if (result & 0x80000000) // Check MSB
-  {
+  if (result & 0x80000000)
     registers[SR] |= SN_FLAG;
-  }
+  else
+    registers[SR] &= ~SN_FLAG;
 
-  printf("0x%08X:\t%-25s\t%s=%s&%s=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\t%s=%s&%s=0x%08X,SR=0x%08X\n", registers[PC], instruction, formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  sprintf(instruction, "and %s,%s,%s", formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
+  sprintf(additionalInfo, "%s=%s&%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 void or (uint32_t registers[NUM_REGISTERS], FILE *output)
