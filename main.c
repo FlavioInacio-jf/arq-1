@@ -1650,7 +1650,7 @@ void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint32_t i = registers[IR] & 0xFFFF;
+  const uint16_t i = registers[IR] & 0xFFFF;
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? registers[x] + i : i;
@@ -1672,7 +1672,7 @@ void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t i = registers[IR] & 0xFFFF;
+  const uint16_t i = registers[IR] & 0xFFFF;
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 1) : i << 1;
@@ -1695,10 +1695,10 @@ void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t i = registers[IR] & 0xFFFF;
+  const uint16_t i = registers[IR] & 0xFFFF;
 
   // Execution of behavior
-  const uint32_t memoryAddress = ((registers[x] + i) << 2);
+  const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 2) : i << 2;
   registers[z] = ((mem8[memoryAddress] << 24) |
                   (mem8[memoryAddress + 1] << 16) |
                   (mem8[memoryAddress + 2] << 8) |
@@ -1708,8 +1708,8 @@ void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "l32 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
-  sprintf(additionalInfo, "R%u=MEM[0x%08X]=0x%08X", z, memoryAddress, registers[z]);
+  sprintf(instruction, "l32 %s,[%s%s%i]", formatRegisterName(z, true), formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
+  sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%08X", formatRegisterName(z, false), memoryAddress, registers[z]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
