@@ -1100,7 +1100,7 @@ void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bae %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isCYSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1124,7 +1124,7 @@ void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bat %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isZNSet(registers) || isCYSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1148,7 +1148,7 @@ void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bbe %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1172,7 +1172,7 @@ void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bbt %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isCYSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1196,7 +1196,7 @@ void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "beq %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1220,7 +1220,8 @@ void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bge %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X",
+          isSNSet(registers) != isOVSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1244,7 +1245,7 @@ void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bgt %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isZNSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1268,7 +1269,7 @@ void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "biv %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isIVSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1292,7 +1293,7 @@ void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "ble %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1316,7 +1317,7 @@ void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "blt %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isSNSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1340,7 +1341,7 @@ void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bne %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isZNSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1364,7 +1365,7 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bni %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isIVSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1388,7 +1389,7 @@ void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bnz %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isZDSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1412,7 +1413,7 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bzd %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isZDSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
