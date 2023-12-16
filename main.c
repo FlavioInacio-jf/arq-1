@@ -1338,7 +1338,7 @@ void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bbe %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(registers) && !isCYSet(registers) ? registers[PC] + 4 : registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
