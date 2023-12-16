@@ -1085,7 +1085,7 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
 void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1099,7 +1099,7 @@ void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bae %u", i);
+  sprintf(instruction, "bae %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1109,7 +1109,7 @@ void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1123,7 +1123,7 @@ void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bat %u", i);
+  sprintf(instruction, "bat %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1133,7 +1133,7 @@ void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1147,7 +1147,7 @@ void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bbe %u", i);
+  sprintf(instruction, "bbe %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1157,7 +1157,7 @@ void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1171,7 +1171,7 @@ void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bbt %u", i);
+  sprintf(instruction, "bbt %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1181,7 +1181,7 @@ void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1195,7 +1195,7 @@ void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "beq %u", i);
+  sprintf(instruction, "beq %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1205,7 +1205,7 @@ void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1219,7 +1219,7 @@ void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bge %u", i);
+  sprintf(instruction, "bge %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1229,7 +1229,7 @@ void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1243,7 +1243,7 @@ void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bgt %u", i);
+  sprintf(instruction, "bgt %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1253,7 +1253,7 @@ void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1267,7 +1267,7 @@ void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "biv %u", i);
+  sprintf(instruction, "biv %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1277,7 +1277,7 @@ void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1291,7 +1291,7 @@ void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "ble %u", i);
+  sprintf(instruction, "ble %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1301,7 +1301,7 @@ void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1315,7 +1315,7 @@ void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "blt %u", i);
+  sprintf(instruction, "blt %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1325,7 +1325,7 @@ void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1339,7 +1339,7 @@ void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bne %u", i);
+  sprintf(instruction, "bne %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1349,7 +1349,7 @@ void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1363,7 +1363,7 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bni %u", i);
+  sprintf(instruction, "bni %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1373,7 +1373,7 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1387,7 +1387,7 @@ void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bnz %u", i);
+  sprintf(instruction, "bnz %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1397,7 +1397,7 @@ void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1411,7 +1411,7 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bzd %u", i);
+  sprintf(instruction, "bzd %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
@@ -1421,7 +1421,7 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const uint32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   *(pcAlreadyIncremented) = true;
@@ -1432,7 +1432,7 @@ void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "bun %u", i);
+  sprintf(instruction, "bun %i", i);
   sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
 
   // Output
