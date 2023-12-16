@@ -519,8 +519,8 @@ void mul(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint8_t l = registers[IR] & 0x1F;
 
   // Execution of behavior
-  const uint32_t valueX = registers[x];
-  const uint32_t valueY = registers[y];
+  const uint64_t valueX = (uint64_t)registers[x];
+  const uint64_t valueY = (uint64_t)registers[y];
 
   const uint64_t result = valueX * valueY;
 
