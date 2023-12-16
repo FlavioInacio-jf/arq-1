@@ -603,10 +603,10 @@ void muls(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint8_t l = registers[IR] & 0x1F;
 
   // Execution of behavior
-  const uint32_t valueX = registers[x];
-  const uint32_t valueY = registers[y];
+  const uint64_t valueX = extendSign64(registers[x], 32);
+  const uint64_t valueY = extendSign64(registers[y], 32);
 
-  const uint64_t result = valueX * valueY;
+  const int64_t result = valueX * valueY;
 
   if (z != 0)
     registers[z] = (uint32_t)result;
