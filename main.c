@@ -423,17 +423,25 @@ void add(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
+  else
+    registers[SR] &= ~ZN_FLAG;
 
   if ((result & 0x80000000))
     registers[SR] |= SN_FLAG;
+  else
+    registers[SR] &= ~SN_FLAG;
 
   if (
       ((valueX & 0x80000000) == (valueY & 0x80000000)) &&
       ((result & 0x80000000) != (valueX & 0x80000000)))
     registers[SR] |= OV_FLAG;
+  else
+    registers[SR] &= ~OV_FLAG;
 
   if (result > 0xFFFFFFFF)
     registers[SR] |= CY_FLAG;
+  else
+    registers[SR] &= ~CY_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
