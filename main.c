@@ -1675,7 +1675,7 @@ void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   const uint8_t i = registers[IR] & 0xFFFF;
 
   // Execution of behavior
-  const uint32_t memoryAddress = ((registers[x] + i) << 1);
+  const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 1) : i << 1;
   registers[z] = ((mem8[memoryAddress] << 24) |
                   (mem8[memoryAddress + 1] << 16));
 
@@ -1683,8 +1683,8 @@ void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "l16 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
-  sprintf(additionalInfo, "R%u=MEM[0x%08X]=0x%08X", z, memoryAddress, registers[z]);
+  sprintf(instruction, "l16 %s,[%s%s%i]", formatRegisterName(z, true), formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
+  sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%04X", formatRegisterName(z, false), memoryAddress, registers[z] >> 16);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
