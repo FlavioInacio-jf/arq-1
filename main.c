@@ -1730,7 +1730,7 @@ void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "s8 [%s%s%i], %s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
+  sprintf(instruction, "s8 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
   sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%02X", memoryAddress, formatRegisterName(z, false), registers[z]);
 
   // Output
@@ -1742,10 +1742,10 @@ void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t i = registers[IR] & 0xFFFF;
+  const uint16_t i = registers[IR] & 0xFFFF;
 
   // Execution of behavior
-  const uint32_t memoryAddress = ((registers[x] + i) << 1);
+  const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 1) : i << 1;
   mem8[memoryAddress] = (registers[z] >> 24) & 0xFF;
   mem8[memoryAddress + 1] = (registers[z] >> 16) & 0xFF;
 
@@ -1753,8 +1753,8 @@ void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "s16 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
-  sprintf(additionalInfo, "MEM[0x%08X]=R%u=0x%08X", memoryAddress, z, registers[z]);
+  sprintf(instruction, "s16 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
+  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%04X", memoryAddress, formatRegisterName(z, false), registers[z] >> 16);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
@@ -1765,10 +1765,10 @@ void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t i = registers[IR] & 0xFFFF;
+  const uint16_t i = registers[IR] & 0xFFFF;
 
   // Execution of behavior
-  const uint32_t memoryAddress = ((registers[x] + i) << 2);
+  const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 2) : i << 2;
   mem8[memoryAddress + 0] = (registers[z] >> 24) & 0xFF;
   mem8[memoryAddress + 1] = (registers[z] >> 16) & 0xFF;
   mem8[memoryAddress + 2] = (registers[z] >> 8) & 0xFF;
@@ -1778,8 +1778,8 @@ void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
-  sprintf(instruction, "s32 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
-  sprintf(additionalInfo, "MEM[0x%08X]=R%u=0x%08X", memoryAddress, z, registers[z]);
+  sprintf(instruction, "s32 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
+  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%08X", memoryAddress, formatRegisterName(z, false), registers[z]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
