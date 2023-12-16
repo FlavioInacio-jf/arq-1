@@ -993,15 +993,15 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
   {
     registers[z] = valueX / i;
 
-    if (registers[z] == 0 || i == 0)
-    {
+    if (registers[z] == 0)
       registers[SR] |= ZN_FLAG;
-    }
+    else
+      registers[SR] &= ~ZN_FLAG;
   }
   else
     registers[SR] |= ZD_FLAG;
 
-  registers[SR] &= 0b1110111; // OV
+  registers[SR] &= ~OV_FLAG; // OV
 
   // Instruction formatting
   char instruction[30] = {0};
