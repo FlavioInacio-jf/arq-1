@@ -650,9 +650,9 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueZ = (uint64_t)registers[z];
   const uint64_t valueY = (uint64_t)registers[y];
 
-  const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) << (l + 1) : valueY << (l + 1);
+  const uint64_t result = ((valueZ << 32) | valueY) << (l + 1);
 
-  if (z != 0)
+  if (x != 0)
     registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
@@ -676,7 +676,7 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "sla %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
-  sprintf(additionalInfo, "%s:%s=%s:%s<<%u=0x%016lX,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, result, registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s:%s<<%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, registers[z], registers[x], registers[SR]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
@@ -768,7 +768,7 @@ void srl(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "srl %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
-  sprintf(additionalInfo, "%s:%s=%s:%s>>%u=0x%016lX,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, result, registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s:%s>>%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, registers[z], registers[x], registers[SR]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
@@ -834,18 +834,18 @@ void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueZ = (uint64_t)registers[z];
   const uint64_t valueY = (uint64_t)registers[y];
 
-  const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) >> (l + 1) : valueY >> (l + 1);
+  const uint64_t result = ((valueZ << 32) | valueY) >> (l + 1);
   registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
   {
     registers[z] = (result >> 32) & 0xFFFFFFFF;
-
-    if (registers[z] != 0)
-      registers[SR] |= OV_FLAG;
-    else
-      registers[SR] &= ~OV_FLAG;
   }
+
+  if (registers[z] != 0)
+    registers[SR] |= OV_FLAG;
+  else
+    registers[SR] &= ~OV_FLAG;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
@@ -858,7 +858,7 @@ void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "sra %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
-  sprintf(additionalInfo, "%s:%s=%s:%s>>%u=0x%016lX,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, result, registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s:%s>>%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, registers[z], registers[x], registers[SR]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
