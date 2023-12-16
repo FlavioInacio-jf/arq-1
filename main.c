@@ -1046,47 +1046,36 @@ void modi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
-  const uint32_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t valueX = (int32_t)registers[x];
-
-  const int32_t i = (registers[IR] & 0xFFFF) |
-                    ((registers[IR] & 0x02000000) ? 0xFC000000 : 0x00000000);
-
-  // Instruction formatting
-  sprintf(instruction, "cmpi r%u,%i", x, i);
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
-  const int32_t dff = valueX - i;
+  const uint32_t valueX = (uint32_t)registers[x];
+  const int32_t result = valueX - i;
 
-  if (dff == 0)
-  {
-    registers[SR] = ZN_FLAG; // ZN
-  }
+  if (result == 0)
+    registers[SR] |= ZN_FLAG;
 
-  if ((dff & 0x80000000)) // Check MSB
-  {
-    registers[SR] |= SN_FLAG; // SN
-  }
+  if ((result & 0x80000000))
+    registers[SR] |= SN_FLAG;
 
-  if ((valueX & 0x8FFFFFFF) != (i & 0x8FFFFFFF) &&
-      ((dff & 0x8FFFFFF) != (valueX & 0x8FFFFFF)))
-  {
-    registers[SR] |= OV_FLAG; // OV
-  }
+  if ((valueX & 0x80000000) != (i & 0x80000000) &&
+      ((result & 0x80000000) != (valueX & 0x80000000)))
+    registers[SR] |= OV_FLAG;
 
-  if ((dff & 0x80000000) == 1) // Check MSB
-  {
-    registers[SR] |= CY_FLAG; // CY
-  }
+  if (result > 0xFFFFFFFF)
+    registers[SR] |= CY_FLAG;
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tSR=0x%08X\n", registers[PC], instruction, registers[SR]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[50] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tSR=0x%08X\n", registers[PC], instruction, registers[SR]);
+  sprintf(instruction, "cmpi %s,%i", formatRegisterName(x, true), i);
+  sprintf(additionalInfo, "SR=0x%08X", registers[SR]);
+
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 /******************************************************
