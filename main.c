@@ -1169,8 +1169,11 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
     else
       registers[SR] &= ~ZN_FLAG;
   }
-  else
+
+  if (i == 0)
     registers[SR] |= ZD_FLAG;
+  else
+    registers[SR] &= ~ZD_FLAG;
 
   registers[SR] &= ~OV_FLAG; // OV
 
