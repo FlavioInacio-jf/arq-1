@@ -579,9 +579,13 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
+  else
+    registers[SR] &= ~ZN_FLAG;
 
   if (registers[z] != 0)
     registers[SR] |= OV_FLAG;
+  else
+    registers[SR] &= ~OV_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
