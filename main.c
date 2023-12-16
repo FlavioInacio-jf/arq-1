@@ -1021,7 +1021,7 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
   printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
-void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
+    void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
@@ -1078,7 +1078,7 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Execution of behavior
   const uint64_t valueX = (uint64_t)registers[x];
 
-  const uint64_t result = valueX - i;
+  const int64_t result = valueX - i;
   registers[z] = (result & 0xFFFFFFFF);
 
   if (result == 0)
@@ -1105,7 +1105,7 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[40] = {0};
+  char additionalInfo[50] = {0};
 
   sprintf(instruction, "subi %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
@@ -1117,11 +1117,37 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
+
+  // Execution of behavior
+  const uint32_t valueX = registers[x];
+
+  const uint64_t result = valueX * i;
+  registers[z] = (uint32_t)result;
+
+  if (result == 0)
+    registers[SR] |= ZN_FLAG;
+  else
+    registers[SR] &= ~ZN_FLAG;
+
+  if ((result & 0xFFFFFFFF00000000) != 0)
+    registers[SR] |= OV_FLAG;
+  else
+    registers[SR] &= ~OV_FLAG;
+
+  // Instruction formatting
   char instruction[30] = {0};
+  char additionalInfo[50] = {0};
 
-  uint32_t x, y = 0;
+  sprintf(instruction, "muli %s,%s,%i",
+          formatRegisterName(z, true), formatRegisterName(x, true), i);
+  sprintf(additionalInfo, "%s=%s*0x%08X=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
 
-  // Falta fazer
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
