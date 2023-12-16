@@ -543,11 +543,42 @@ void mul(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 void sll(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+  const uint8_t l = registers[IR] & 0x1F;
+
+  // Execution of behavior
+  const uint64_t valueZ = (uint64_t)registers[z];
+  const uint64_t valueY = (uint64_t)registers[y];
+
+  const int64_t result = z != 0 ? ((valueZ << 32) | valueY) << (l + 1) : valueY << (l + 1);
+  registers[x] = result & 0xFFFFFFFF;
+
+  if (z != 0)
+    registers[z] = (result >> 32) & 0xFFFFFFFF;
+
+  if (result == 0)
+    registers[SR] |= ZN_FLAG;
+  else
+    registers[SR] &= ~ZN_FLAG;
+
+  if (registers[z] != 0)
+    registers[SR] |= CY_FLAG;
+  else
+    registers[SR] &= ~CY_FLAG;
+
+  // Instruction formatting
   char instruction[30] = {0};
+  char additionalInfo[50] = {0};
 
-  uint32_t x, y = 0;
+  sprintf(instruction, "sll %s,%s,%s,%u",
+          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
+  sprintf(additionalInfo, "%s:%s=%s:%s<<%u=0x%016lX,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, result, registers[SR]);
 
-  // Falta fazer
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 void muls(uint32_t registers[NUM_REGISTERS], FILE *output)
