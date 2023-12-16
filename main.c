@@ -1021,7 +1021,7 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
   printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
-    void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
+void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
@@ -1078,7 +1078,7 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Execution of behavior
   const uint64_t valueX = (uint64_t)registers[x];
 
-  const int64_t result = valueX - i;
+  const uint64_t result = valueX - i;
   registers[z] = (result & 0xFFFFFFFF);
 
   if (result == 0)
