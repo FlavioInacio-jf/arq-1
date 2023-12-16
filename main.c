@@ -829,11 +829,13 @@ void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint8_t l = registers[IR] & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueZ = (uint64_t)registers[z];
-  const uint64_t valueY = (uint64_t)registers[y];
+  const int64_t valueZ = extendSign64(registers[z], 32);
+  const int64_t valueY = extendSign64(registers[y], 32);
 
-  const uint64_t result = ((valueZ << 32) | valueY) >> (l + 1);
-  registers[x] = result & 0xFFFFFFFF;
+  const int64_t result = ((valueZ << 32) | valueY) >> (l + 1);
+
+  if (x != 0)
+    registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
     registers[z] = (result >> 32) & 0xFFFFFFFF;
