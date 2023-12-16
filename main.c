@@ -838,9 +838,7 @@ void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
   registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
-  {
     registers[z] = (result >> 32) & 0xFFFFFFFF;
-  }
 
   if (registers[z] != 0)
     registers[SR] |= OV_FLAG;
