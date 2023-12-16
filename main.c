@@ -505,9 +505,13 @@ void mul(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
+  else
+    registers[SR] &= ~ZN_FLAG;
 
   if (registers[l] != 0)
     registers[SR] |= CY_FLAG;
+  else
+    registers[SR] &= ~CY_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
