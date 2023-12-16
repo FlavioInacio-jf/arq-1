@@ -1198,7 +1198,7 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
   const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
-  const uint32_t valueX = registers[x];
+  const int32_t valueX = registers[x];
 
   if (i != 0)
   {
