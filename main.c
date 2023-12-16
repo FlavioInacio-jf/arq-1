@@ -1162,9 +1162,8 @@ void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
   const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
-  const uint32_t valueX = registers[x];
-
-  const uint64_t result = valueX * i;
+  const int64_t valueX = extendSign64(registers[x], 32);
+  const int64_t result = valueX * i;
 
   if (z != 0)
     registers[z] = (uint32_t)result;
