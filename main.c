@@ -1658,11 +1658,6 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
 
 void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
 {
-  char instruction[30] = {0};
-
-  // Instruction formatting
-  sprintf(instruction, "ret");
-
   // Execution of behavior
   *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
 
@@ -1673,11 +1668,15 @@ void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *p
                    (mem8[registers[SP] + 2] << 8) |
                    (mem8[registers[SP] + 3] << 0));
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[SP], registers[PC]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[42] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%08X\n", oldPC, instruction, registers[SP], registers[PC]);
+  sprintf(instruction, "ret");
+  sprintf(additionalInfo, "PC=MEM[0x%08X]=0x%08X", registers[SP], registers[PC]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
