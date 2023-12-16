@@ -98,7 +98,8 @@ int isOVSet(uint32_t registers[NUM_REGISTERS]);
 int isIVSet(uint32_t registers[NUM_REGISTERS]);
 int isCYSet(uint32_t registers[NUM_REGISTERS]);
 
-int32_t extendSign(uint32_t value, uint8_t significantBit);
+int32_t extendSign32(uint32_t value, uint8_t significantBit);
+int64_t extendSign64(uint32_t value, uint8_t significantBit);
 void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo);
 char *formatRegisterName(uint8_t registerNumber, bool lower);
 int power(int base, int exponent);
@@ -391,7 +392,7 @@ void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   // Fetch operands
   const uint8_t z = (registers[IR] & 0x03E00000) >> 21;
-  const int32_t xyl = extendSign(registers[IR] & 0x1FFFFF, 21);
+  const int32_t xyl = extendSign32(registers[IR] & 0x1FFFFF, 21);
 
   // Execution of behavior
   registers[z] = xyl;
@@ -1026,7 +1027,7 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
+  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
   const uint64_t valueX = (uint64_t)registers[x];
@@ -1073,7 +1074,7 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
+  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
   const uint64_t valueX = (uint64_t)registers[x];
@@ -1120,7 +1121,7 @@ void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
+  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
   const uint32_t valueX = registers[x];
@@ -1155,7 +1156,7 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
+  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
   const uint32_t valueX = registers[x];
@@ -1195,7 +1196,7 @@ void modi(uint32_t registers[NUM_REGISTERS], FILE *output)
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
+  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
   const uint32_t valueX = registers[x];
@@ -1230,7 +1231,7 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   // Fetch operands
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
+  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
   const uint64_t valueX = (uint64_t)registers[x];
@@ -1275,7 +1276,7 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
 void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1299,7 +1300,7 @@ void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1323,7 +1324,7 @@ void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1347,7 +1348,7 @@ void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1371,7 +1372,7 @@ void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1395,7 +1396,7 @@ void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1420,7 +1421,7 @@ void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1444,7 +1445,7 @@ void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1468,7 +1469,7 @@ void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1492,7 +1493,7 @@ void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1516,7 +1517,7 @@ void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1540,7 +1541,7 @@ void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1564,7 +1565,7 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1588,7 +1589,7 @@ void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
@@ -1612,7 +1613,7 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   *(pcAlreadyIncremented) = true;
@@ -1793,7 +1794,7 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
 {
   // Fetch operands
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
+  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
   *(pcAlreadyIncremented) = true; // Prevent it from being incremented
@@ -1822,7 +1823,7 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
 void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
 {
   // Fetch operands
-  const int32_t i = extendSign(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
   *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
@@ -2034,10 +2035,16 @@ int isZNSet(uint32_t registers[NUM_REGISTERS])
  * Utility Functions
  *******************************************************/
 
-int32_t extendSign(uint32_t value, uint8_t significantBit)
+int32_t extendSign32(uint32_t value, uint8_t significantBit)
 {
   const uint32_t bitSignalDefined = value & (1 << (significantBit - 1));
   return (bitSignalDefined ? (value | (0xFFFFFFFF << (significantBit))) : value);
+}
+
+int64_t extendSign64(uint32_t value, uint8_t significantBit)
+{
+  const uint32_t bitSignalDefined = value & (1 << (significantBit - 1));
+  return (bitSignalDefined ? (value | (0xFFFFFFFFFFFFFFFF << (significantBit))) : value);
 }
 
 void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo)
