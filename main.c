@@ -839,49 +839,49 @@ void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
-  char instruction[30] = {0};
-
   // Fetch operands
-  const uint32_t x = (registers[IR] >> 16) & 0x1F;
-  const uint32_t y = (registers[IR] >> 10) & 0x1F;
-
-  // Instruction formatting
-  sprintf(instruction, "cmp %s,%s", formatRegisterName(x, true), formatRegisterName(y, true));
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint8_t y = (registers[IR] >> 11) & 0x1F;
 
   // Execution of behavior
   const uint64_t valueX = (uint64_t)registers[x];
   const uint64_t valueY = (uint64_t)registers[y];
 
   const uint64_t result = valueX - valueY;
+  registers[z] = (result & 0xFFFFFFFF);
 
   if (result == 0)
-  {
     registers[SR] |= ZN_FLAG;
-  }
+  else
+    registers[SR] &= ~ZN_FLAG;
 
-  if ((result & 0x80000000)) // Check MSB
-  {
+  if ((result & 0x80000000))
     registers[SR] |= SN_FLAG;
-  }
+  else
+    registers[SR] &= ~SN_FLAG;
 
-  if (((valueX & 0x8FFFFFFF) == (valueY & 0x8FFFFFFF)) ||
-      (valueX < 0 && valueY < 0 && result >= 0))
-  {
+  if (
+      ((valueX & 0x80000000) != (valueY & 0x80000000)) &&
+      ((result & 0x80000000) != (valueX & 0x80000000)))
     registers[SR] |= OV_FLAG;
-  }
+  else
+    registers[SR] &= ~OV_FLAG;
 
   if (result > 0xFFFFFFFF)
-  {
     registers[SR] |= CY_FLAG;
-  }
+  else
+    registers[SR] &= ~CY_FLAG;
 
-  // Screen output formatting
-  printf("0x%08X:\t%-25s\tSR=0x%08X\n", registers[PC], instruction, registers[SR]);
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[30] = {0};
 
-  // Output formatting to file
-  fprintf(output, "0x%08X:\t%-25s\tSR=0x%08X\n", registers[PC], instruction, registers[SR]);
+  sprintf(instruction, "cmp %s,%s", formatRegisterName(x, true), formatRegisterName(y, true));
+  sprintf(additionalInfo, "SR=0x%08X", registers[SR]);
 
-  // Falta corrigir
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 void and (uint32_t registers[NUM_REGISTERS], FILE *output)
