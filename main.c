@@ -698,7 +698,7 @@ void divv(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "div %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
@@ -785,7 +785,7 @@ void divs(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "divs %s,%s,%s,%s",
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
@@ -1021,7 +1021,7 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
   printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
-void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
+    void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
