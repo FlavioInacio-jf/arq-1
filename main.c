@@ -781,8 +781,8 @@ void divs(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint8_t l = registers[IR] & 0x1F;
 
   // Execution of behavior
-  const uint32_t valueX = registers[x];
-  const uint32_t valueY = registers[y];
+  const int32_t valueX = registers[x];
+  const int32_t valueY = registers[y];
 
   if (valueY != 0)
   {
