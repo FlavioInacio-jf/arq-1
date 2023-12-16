@@ -553,7 +553,7 @@ void sll(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueZ = (uint64_t)registers[z];
   const uint64_t valueY = (uint64_t)registers[y];
 
-  const int64_t result = z != 0 ? ((valueZ << 32) | valueY) << (l + 1) : valueY << (l + 1);
+  const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) << (l + 1) : valueY << (l + 1);
   registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
@@ -633,7 +633,7 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueZ = (uint64_t)registers[z];
   const uint64_t valueY = (uint64_t)registers[y];
 
-  const int64_t result = z != 0 ? ((valueZ << 32) | valueY) << (l + 1) : valueY << (l + 1);
+  const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) << (l + 1) : valueY << (l + 1);
   registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
@@ -720,7 +720,7 @@ void srl(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueZ = (uint64_t)registers[z];
   const uint64_t valueY = (uint64_t)registers[y];
 
-  const int64_t result = z != 0 ? ((valueZ << 32) | valueY) >> (l + 1) : valueY >> (l + 1);
+  const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) >> (l + 1) : valueY >> (l + 1);
   registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
@@ -807,7 +807,7 @@ void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint64_t valueZ = (uint64_t)registers[z];
   const uint64_t valueY = (uint64_t)registers[y];
 
-  const int64_t result = z != 0 ? ((valueZ << 32) | valueY) >> (l + 1) : valueY >> (l + 1);
+  const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) >> (l + 1) : valueY >> (l + 1);
   registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
