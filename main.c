@@ -1233,8 +1233,8 @@ void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
   const int32_t i = extendSign(registers[IR] & 0xFFFF, 16);
 
   // Execution of behavior
-  const uint32_t valueX = (uint32_t)registers[x];
-  const int32_t result = valueX - i;
+  const uint64_t valueX = (uint64_t)registers[x];
+  const uint64_t result = valueX - i;
 
   if (result == 0)
     registers[SR] |= ZN_FLAG;
