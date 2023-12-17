@@ -1221,7 +1221,7 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
   char additionalInfo[50] = {0};
 
-  sprintf(instruction, "divi %s,%s,%u",
+  sprintf(instruction, "divi %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
   sprintf(additionalInfo, "%s=%s/0x%08X=0x%08X,SR=0x%08X",
           formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
