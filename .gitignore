@@ -2,4 +2,7 @@ main
 *.hex
 *.out
 *.json
+*.txt
+*.ipynb
+*.py
 bin
