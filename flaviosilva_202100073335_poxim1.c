@@ -719,8 +719,8 @@ void divv(uint32_t registers[NUM_REGISTERS], FILE *output)
   char instruction[30] = {0};
   char additionalInfo[100] = {0};
 
-  sprintf(instruction, "div %s,%s,%s,%u",
-          formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
+  sprintf(instruction, "div %s,%s,%s,%s",
+          formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
   sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
 
   // Output
