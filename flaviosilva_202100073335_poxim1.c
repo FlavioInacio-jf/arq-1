@@ -75,7 +75,7 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void interrupt(uint32_t registers[NUM_REGISTERS], bool *executa, FILE *output);
+void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output);
 
 void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
@@ -168,10 +168,10 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
 
   printf("[START OF SIMULATION]\n");
 
-  bool executa = true;
+  bool run = true;
   bool pcAlreadyIncremented = false; // Flag to track whether the PC has been incremented
 
-  while (executa)
+  while (run)
   {
     registers[IR] = ((mem8[registers[PC] + 0] << 24) |
                      (mem8[registers[PC] + 1] << 16) |
@@ -327,7 +327,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         bzd(registers, output, &pcAlreadyIncremented);
         break;
       case 0b111111: // int
-        interrupt(registers, &executa, output);
+        interrupt(registers, &run, output);
         break;
 
       case 0b011110: // call type F
@@ -346,9 +346,9 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         pop(registers, mem8, output);
         break;
 
-      default: // Instrucao desconhecida
+      default: // Unknown instruction
         printf("[INVALID INSTRUCTION @ 0x%08X]\n", registers[PC]);
-        executa = 0; // Parar a execucao
+        run = 0; // Stop execution
       }
     }
     if (!pcAlreadyIncremented)
@@ -1671,11 +1671,11 @@ void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void interrupt(uint32_t registers[NUM_REGISTERS], bool *executa, FILE *output)
+void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output)
 {
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
-  (*executa) = 0;
+  (*run) = 0;
   memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
 
   // Output
