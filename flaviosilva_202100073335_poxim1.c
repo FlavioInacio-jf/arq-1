@@ -586,7 +586,7 @@ void sll(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "sll %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
-  sprintf(additionalInfo, "%s:%s=%s:%s<<%u=0x%016lX,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, result, registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s:%s<<%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, registers[z], registers[x], registers[SR]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
@@ -628,7 +628,7 @@ void muls(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "muls %s,%s,%s,%s",
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s:%s=%s*%s=0x%016lX,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), result, registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s*%s=0x%08X%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[l], registers[z], registers[SR]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
