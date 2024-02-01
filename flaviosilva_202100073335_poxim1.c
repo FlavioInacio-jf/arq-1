@@ -16,12 +16,12 @@
 #define NUM_REGISTERS 32
 
 // Specific use register indexes
-#define IR 28 // Instruction Register
-#define IR 26 // Case interruption
+#define CR 26  // Case interruption
 #define IPC 27 // Interrupt address
-#define PC 29 // Program Counter
-#define SP 30 // Stack Pointer
-#define SR 31 // Status Register
+#define IR 28  // Instruction Register
+#define PC 29  // Program Counter
+#define SP 30  // Stack Pointer
+#define SR 31  // Status Register
 
 // Flags in Status Register
 #define ZN_FLAG 0b01000000
@@ -353,6 +353,10 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         break;
       case 0b001011: // pop
         pop(registers, mem8, output);
+        break;
+
+      case 0b100000: // reti
+        reti(registers, mem8, output);
         break;
 
       default: // Unknown instruction
@@ -2057,24 +2061,38 @@ void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
 void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
+  // Execution of behavior
+  registers[SP] += 4;
+  registers[IPC] = mem8[registers[SP]];
 
+  registers[SP] += 4;
+  registers[CR] = mem8[registers[SP]];
+
+  registers[SP] += 4;
+  registers[PC] = mem8[registers[SP]];
+
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[300] = {0};
+
+  sprintf(instruction, "reti");
+  sprintf(additionalInfo, "IPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X", registers[IPC],  registers[SP] - 8, registers[CR], registers[SP] - 4, registers[PC], registers[SP]);
+
+  // Output
+  printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
 void cbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
-
 }
 
 void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
-
 }
 
 void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
-
 }
-
 
 /******************************************************
  * Fetch from the status register(SR)
