@@ -2076,7 +2076,7 @@ void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   char additionalInfo[300] = {0};
 
   sprintf(instruction, "reti");
-  sprintf(additionalInfo, "IPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X", registers[IPC],  registers[SP] - 8, registers[CR], registers[SP] - 4, registers[PC], registers[SP]);
+  sprintf(additionalInfo, "IPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X", registers[IPC], registers[SP] - 8, registers[CR], registers[SP] - 4, registers[PC], registers[SP]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
@@ -2084,6 +2084,20 @@ void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
 void cbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 {
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+
+  // Execution of behavior
+  registers[z][x] = 0;
+
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[300] = {0};
+
+  sprintf(instruction, "cbr %s[%i]",
+          formatRegisterName(z, true), x);
+  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
 }
 
 void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
