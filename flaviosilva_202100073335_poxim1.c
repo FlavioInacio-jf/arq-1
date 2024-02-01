@@ -78,7 +78,6 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
 void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
 void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output);
 
 void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
@@ -94,9 +93,9 @@ void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 
 void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void cbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void cbr(uint32_t registers[NUM_REGISTERS], FILE *output);
+void sbr(uint32_t registers[NUM_REGISTERS], FILE *output);
+void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output);
 
 int isZNSet(uint32_t registers[NUM_REGISTERS]);
 int isZDSet(uint32_t registers[NUM_REGISTERS]);
@@ -357,6 +356,19 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
 
       case 0b100000: // reti
         reti(registers, mem8, output);
+        break;
+      case 0b100001: // cbr, sbr
+        const uint8_t subOpcode = registers[IR] & 0x1;
+
+        switch (subOpcode)
+        {
+        case 0b0: // cbr
+          cbr(registers, output);
+          break;
+        case 0b1: // sbr
+          sbr(registers, output);
+          break;
+        }
         break;
 
       default: // Unknown instruction
@@ -1683,17 +1695,6 @@ void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output)
-{
-  // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  (*run) = 0;
-  memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
-
-  // Output
-  printInstruction(oldPC, output, "int 0", "CR=0x00000000,PC=0x00000000");
-}
-
 /******************************************************
  * Memory read/write operations
  *******************************************************/
@@ -2082,7 +2083,7 @@ void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
-void cbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void cbr(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
@@ -2100,12 +2101,33 @@ void cbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
 }
 
-void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void sbr(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
+  // Fetch operands
+  const uint8_t z = (registers[IR] >> 21) & 0x1F;
+  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+
+  // Execution of behavior
+  registers[z][x] = 1;
+
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[300] = {0};
+
+  sprintf(instruction, "sbr %s[%i]",
+          formatRegisterName(z, true), x);
+  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
 }
 
-void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output)
 {
+  // Execution of behavior
+  const uint32_t oldPC = registers[PC];
+  (*run) = 0;
+  memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
+
+  // Output
+  printInstruction(oldPC, output, "int 0", "CR=0x00000000,PC=0x00000000");
 }
 
 /******************************************************
