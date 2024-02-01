@@ -17,6 +17,8 @@
 
 // Specific use register indexes
 #define IR 28 // Instruction Register
+#define IR 26 // Case interruption
+#define IPC 27 // Interrupt address
 #define PC 29 // Program Counter
 #define SP 30 // Stack Pointer
 #define SR 31 // Status Register
@@ -27,6 +29,7 @@
 #define SN_FLAG 0b00010000
 #define OV_FLAG 0b00001000
 #define IV_FLAG 0b00000100
+#define IE_FLAG 0b00000010
 #define CY_FLAG 0b00000001
 
 /******************************************************
@@ -90,11 +93,17 @@ void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *p
 void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 
+void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void cbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+
 int isZNSet(uint32_t registers[NUM_REGISTERS]);
 int isZDSet(uint32_t registers[NUM_REGISTERS]);
 int isSNSet(uint32_t registers[NUM_REGISTERS]);
 int isOVSet(uint32_t registers[NUM_REGISTERS]);
 int isIVSet(uint32_t registers[NUM_REGISTERS]);
+int isIESet(uint32_t registers[NUM_REGISTERS]);
 int isCYSet(uint32_t registers[NUM_REGISTERS]);
 
 int32_t extendSign32(uint32_t value, uint8_t significantBit);
@@ -2043,12 +2052,42 @@ void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 }
 
 /******************************************************
+ * Iterruption
+ *******************************************************/
+
+void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+{
+
+}
+
+void cbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+{
+
+}
+
+void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+{
+
+}
+
+void sbr(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+{
+
+}
+
+
+/******************************************************
  * Fetch from the status register(SR)
  *******************************************************/
 
 int isCYSet(uint32_t registers[NUM_REGISTERS])
 {
   return (registers[SR] & CY_FLAG) != 0;
+}
+
+int isIESet(uint32_t registers[NUM_REGISTERS])
+{
+  return (registers[SR] & IE_FLAG) != 0;
 }
 
 int isIVSet(uint32_t registers[NUM_REGISTERS])
