@@ -216,7 +216,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         sub(registers, output);
         break;
       case 0b000100: // mul, sll, muls, sla, div, srl, divs, sra
-        const uint8_t subOpcode = (registers[IR] >> 8) & 0x7;
+        uint8_t subOpcode = (registers[IR] >> 8) & 0x7;
 
         switch (subOpcode)
         {
@@ -366,7 +366,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         reti(registers, mem8, output);
         break;
       case 0b100001: // cbr, sbr
-        const uint8_t subOpcode = registers[IR] & 0x1;
+        subOpcode = registers[IR] & 0x1;
 
         switch (subOpcode)
         {
