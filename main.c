@@ -2102,7 +2102,7 @@ void cbr(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
-  registers[z][x] = 0;
+  registers[z] &= ~((0x00000001) << x);
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -2124,7 +2124,7 @@ void sbr(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
-  registers[z][x] = 1;
+  registers[z] |= ~((0xFFFFFFF0) << x);
 
   // Instruction formatting
   char instruction[30] = {0};
