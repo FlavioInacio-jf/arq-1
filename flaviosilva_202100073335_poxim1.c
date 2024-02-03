@@ -32,6 +32,17 @@
 #define IE_FLAG 0b00000010
 #define CY_FLAG 0b00000001
 
+// Interrupt Address
+#define INIT_INTERRUPT_ADDR     0x00000000
+#define INVALID_INSTRUCTION_ADDR 0x00000004
+#define DIVIDE_BY_ZERO_ADDR     0x00000008
+#define SOFTWARE_INTERRUPT_ADDR 0x0000000C
+#define HARDWARE1_INTERRUPT_ADDR 0x00000010
+#define HARDWARE2_INTERRUPT_ADDR 0x00000014
+#define HARDWARE3_INTERRUPT_ADDR 0x00000018
+#define HARDWARE4_INTERRUPT_ADDR 0x0000001C
+
+
 /******************************************************
  * Functin Signature
  *******************************************************/
@@ -334,9 +345,6 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
       case 0b111000: // bzd
         bzd(registers, output, &pcAlreadyIncremented);
         break;
-      case 0b111111: // int
-        interrupt(registers, &run, output);
-        break;
 
       case 0b011110: // call type F
         callf(registers, mem8, output, &pcAlreadyIncremented);
@@ -369,6 +377,9 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
           sbr(registers, output);
           break;
         }
+        break;
+      case 0b111111: // int
+        interrupt(registers, &run, output);
         break;
 
       default: // Unknown instruction
@@ -2090,6 +2101,7 @@ void cbr(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
 
   // Execution of behavior
+  const uint32_t oldPC = registers[PC];
   registers[z][x] = 0;
 
   // Instruction formatting
@@ -2099,6 +2111,9 @@ void cbr(uint32_t registers[NUM_REGISTERS], FILE *output)
   sprintf(instruction, "cbr %s[%i]",
           formatRegisterName(z, true), x);
   sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void sbr(uint32_t registers[NUM_REGISTERS], FILE *output)
@@ -2108,6 +2123,7 @@ void sbr(uint32_t registers[NUM_REGISTERS], FILE *output)
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
 
   // Execution of behavior
+  const uint32_t oldPC = registers[PC];
   registers[z][x] = 1;
 
   // Instruction formatting
@@ -2117,17 +2133,39 @@ void sbr(uint32_t registers[NUM_REGISTERS], FILE *output)
   sprintf(instruction, "sbr %s[%i]",
           formatRegisterName(z, true), x);
   sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
+
+  // Output
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output)
 {
+  // Fetch operands
+  const uint32_t i = registers[IR] & 0x3FFFFF;
+
   // Execution of behavior
   const uint32_t oldPC = registers[PC];
-  (*run) = 0;
-  memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
+  if (i == 0)
+  {
+    (*run) = 0;
+    memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
+  }
+  else
+  {
+    registers[CR] = i;
+    registers[IPC] = oldPC;
+    registers[PC] = SOFTWARE_INTERRUPT_ADDR;
+  }
+
+  // Instruction formatting
+  char instruction[30] = {0};
+  char additionalInfo[300] = {0};
+
+  sprintf(instruction, "int %i", i);
+  sprintf(additionalInfo, "CR=0x%08X,PC=0x%08X", registers[CR], registers[PC]);
 
   // Output
-  printInstruction(oldPC, output, "int 0", "CR=0x00000000,PC=0x00000000");
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 /******************************************************
