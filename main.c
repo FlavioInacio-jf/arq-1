@@ -446,6 +446,7 @@ void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
 
 void add(uint32_t registers[NUM_REGISTERS], FILE *output)
 {
+
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
   const uint8_t x = (registers[IR] >> 16) & 0x1F;
@@ -484,7 +485,7 @@ void add(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "add %s,%s,%s",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
@@ -534,7 +535,7 @@ void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "sub %s,%s,%s",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
@@ -617,7 +618,7 @@ void sll(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[200] = {0};
 
   sprintf(instruction, "sll %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
@@ -703,7 +704,7 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[200] = {0};
 
   sprintf(instruction, "sla %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
@@ -795,7 +796,7 @@ void srl(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[200] = {0};
 
   sprintf(instruction, "srl %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
@@ -885,7 +886,7 @@ void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[200] = {0};
 
   sprintf(instruction, "sra %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
@@ -972,7 +973,7 @@ void and (uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "and %s,%s,%s", formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
   sprintf(additionalInfo, "%s=%s&%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
@@ -1009,7 +1010,7 @@ void or (uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "or %s,%s,%s", formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
   sprintf(additionalInfo, "%s=%s|%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
@@ -1044,7 +1045,7 @@ void not(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "not %s,%s", formatRegisterName(z, true), formatRegisterName(x, true));
   sprintf(additionalInfo, "%s=~%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), registers[z], registers[SR]);
@@ -1080,7 +1081,7 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "xor %s,%s,%s", formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
   sprintf(additionalInfo, "%s=%s^%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
@@ -1177,7 +1178,7 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[200] = {0};
 
   sprintf(instruction, "subi %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
@@ -1213,7 +1214,7 @@ void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[200] = {0};
 
   sprintf(instruction, "muli %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
@@ -1253,7 +1254,7 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[200] = {0};
 
   sprintf(instruction, "divi %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
@@ -1291,7 +1292,7 @@ void modi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[200] = {0};
 
   sprintf(instruction, "modi %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
@@ -1724,7 +1725,7 @@ void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[50] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "l8 %s,[%s%s%i]", formatRegisterName(z, true), formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
   sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%02X", formatRegisterName(z, false), memoryAddress, registers[z]);
@@ -1749,7 +1750,7 @@ void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "l16 %s,[%s%s%i]", formatRegisterName(z, true), formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
   sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%04X", formatRegisterName(z, false), memoryAddress, registers[z] >> 16);
@@ -1776,7 +1777,7 @@ void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "l32 %s,[%s%s%i]", formatRegisterName(z, true), formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
   sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%08X", formatRegisterName(z, false), memoryAddress, registers[z]);
@@ -1800,7 +1801,7 @@ void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "s8 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
   sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%02X", memoryAddress, formatRegisterName(z, false), registers[z]);
@@ -1823,7 +1824,7 @@ void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "s16 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
   sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%04X", memoryAddress, formatRegisterName(z, false), registers[z] >> 16);
@@ -1848,7 +1849,7 @@ void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[30] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "s32 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
   sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%08X", memoryAddress, formatRegisterName(z, false), registers[z]);
