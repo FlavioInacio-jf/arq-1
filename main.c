@@ -34,8 +34,8 @@
 
 // Interrupt Address
 #define INIT_INTERRUPT_ADDR 0x00000000
-#define INVALID_INSTRUCTION_ADDR 0x00000004
 #define DIVIDE_BY_ZERO_ADDR 0x00000008
+#define INVALID_INSTRUCTION_ADDR 0x00000004
 #define SOFTWARE_INTERRUPT_ADDR 0x0000000C
 #define HARDWARE1_INTERRUPT_ADDR 0x00000010
 #define HARDWARE2_INTERRUPT_ADDR 0x00000014
@@ -121,7 +121,7 @@ int32_t extendSign32(uint32_t value, uint8_t significantBit);
 int64_t extendSign64(uint32_t value, uint8_t significantBit);
 void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo);
 char *formatRegisterName(uint8_t registerNumber, bool lower);
-int power(int base, int exponent);
+void printInterruptMessage(uint32_t address, FILE *output);
 
 // Principal function
 int main(int argc, char *argv[])
@@ -395,7 +395,6 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
 
   // Output formatting to file
   fprintf(output, "[END OF SIMULATION]\n");
-
   printf("[END OF SIMULATION]\n");
 }
 
@@ -2190,11 +2189,12 @@ void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *p
   char instruction[100] = {0};
   sprintf(instruction, "[INVALID INSTRUCTION @ 0x%08X]\n", oldPC);
 
-  // Screen output formatting
-  printf("%s", instruction);
-
   // Output formatting to file
+  printf("%s", instruction);
   fprintf(output, "%s", instruction);
+
+  // Screen output formatting
+  printInterruptMessage((uint32_t)SOFTWARE_INTERRUPT_ADDR, output);
 }
 
 /******************************************************
@@ -2306,11 +2306,30 @@ char *formatRegisterName(uint8_t registerNumber, bool lower)
   return result;
 }
 
-int power(int base, int exponent)
+void printInterruptMessage(uint32_t address, FILE *output)
 {
-  if (exponent == 0)
+
+  switch (address)
   {
-    return 1;
+  case SOFTWARE_INTERRUPT_ADDR:
+    printf("[SOFTWARE INTERRUPTION]\n");
+    fprintf(output, "[SOFTWARE INTERRUPTION]\n%s", "");
+    break;
+  case HARDWARE1_INTERRUPT_ADDR:
+    printf("[HARDWARE INTERRUPTION 1]\n");
+    fprintf(output, "[HARDWARE INTERRUPTION 1]\n%s", "");
+    break;
+  case HARDWARE2_INTERRUPT_ADDR:
+    printf("[HARDWARE INTERRUPTION 2]\n");
+    fprintf(output, "[HARDWARE INTERRUPTION 2]\n%s", "");
+    break;
+  case HARDWARE3_INTERRUPT_ADDR:
+    printf("[HARDWARE INTERRUPTION 3]\n");
+    fprintf(output, "[HARDWARE INTERRUPTION 3]\n%s", "");
+    break;
+  case HARDWARE4_INTERRUPT_ADDR:
+    printf("[HARDWARE INTERRUPTION 4]\n");
+    fprintf(output, "[HARDWARE INTERRUPTION 4]\n%s", "");
+    break;
   }
-  return base * power(base, exponent - 1);
 }
