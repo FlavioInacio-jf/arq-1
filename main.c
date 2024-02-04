@@ -1795,7 +1795,9 @@ void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? registers[x] + i : i;
-  mem8[memoryAddress] = registers[z];
+
+  if (memoryAddress <= 1024)
+    mem8[memoryAddress] = registers[z];
 
   // Instruction formatting
   char instruction[30] = {0};
