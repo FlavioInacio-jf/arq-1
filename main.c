@@ -33,15 +33,14 @@
 #define CY_FLAG 0b00000001
 
 // Interrupt Address
-#define INIT_INTERRUPT_ADDR     0x00000000
+#define INIT_INTERRUPT_ADDR 0x00000000
 #define INVALID_INSTRUCTION_ADDR 0x00000004
-#define DIVIDE_BY_ZERO_ADDR     0x00000008
+#define DIVIDE_BY_ZERO_ADDR 0x00000008
 #define SOFTWARE_INTERRUPT_ADDR 0x0000000C
 #define HARDWARE1_INTERRUPT_ADDR 0x00000010
 #define HARDWARE2_INTERRUPT_ADDR 0x00000014
 #define HARDWARE3_INTERRUPT_ADDR 0x00000018
 #define HARDWARE4_INTERRUPT_ADDR 0x0000001C
-
 
 /******************************************************
  * Functin Signature
@@ -107,6 +106,8 @@ void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void cbr(uint32_t registers[NUM_REGISTERS], FILE *output);
 void sbr(uint32_t registers[NUM_REGISTERS], FILE *output);
 void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output);
+
+void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
 
 int isZNSet(uint32_t registers[NUM_REGISTERS]);
 int isZDSet(uint32_t registers[NUM_REGISTERS]);
@@ -383,8 +384,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         break;
 
       default: // Unknown instruction
-        printf("[INVALID INSTRUCTION @ 0x%08X]\n", registers[PC]);
-        run = 0; // Stop execution
+        unknownInstruction(registers, output, &pcAlreadyIncremented);
       }
     }
     if (!pcAlreadyIncremented)
@@ -2166,6 +2166,33 @@ void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output)
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
+}
+
+/******************************************************
+ * Routines interrupt handling
+ *******************************************************/
+
+void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+{
+
+  // Execution of behavior
+  *(pcAlreadyIncremented) = true;
+  const uint32_t oldPC = registers[PC];
+
+  registers[SR] |= IV_FLAG;
+  registers[CR] = (registers[IR] >> 26) & 0x3F;
+  registers[IPC] = registers[PC];
+  registers[PC] = INVALID_INSTRUCTION_ADDR;
+
+  // Instruction formatting
+  char instruction[100] = {0};
+  sprintf(instruction, "[INVALID INSTRUCTION @ 0x%08X]\n", oldPC);
+
+  // Screen output formatting
+  printf("%s", instruction);
+
+  // Output formatting to file
+  fprintf(output, "%s", instruction);
 }
 
 /******************************************************
