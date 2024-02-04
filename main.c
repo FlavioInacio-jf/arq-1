@@ -1955,7 +1955,6 @@ void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   const uint32_t operands[] = {v, w, x, y, z};
 
   // Execution of behavior
-  const uint32_t oldSP = registers[SP];
   for (uint8_t i = 0; i < 5; i++)
   {
     const uint32_t operand = operands[i];
@@ -2000,7 +1999,7 @@ void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
                           (i > 0) ? (",") : (""), formatRegisterName(operand, false));
   }
 
-  sprintf(additionalInfo, "MEM[0x%08X]{%s}={%s}", oldSP, registerValues, registerLabels);
+  sprintf(additionalInfo, "MEM[0x%08X]{%s}={%s}", registers[SP], registerValues, registerLabels);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
