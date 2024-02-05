@@ -102,7 +102,7 @@ void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *p
 void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 
-void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
 void cbr(uint32_t registers[NUM_REGISTERS], FILE *output);
 void sbr(uint32_t registers[NUM_REGISTERS], FILE *output);
 void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output);
@@ -123,6 +123,7 @@ int64_t extendSign64(uint32_t value, uint8_t significantBit);
 void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo);
 char *formatRegisterName(uint8_t registerNumber, bool lower);
 void printInterruptMessage(uint32_t address, FILE *output);
+uint32_t readMemory32(uint8_t *mem8, uint32_t memoryAddress);
 
 // Principal function
 int main(int argc, char *argv[])
@@ -365,7 +366,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         break;
 
       case 0b100000: // reti
-        reti(registers, mem8, output);
+        reti(registers, mem8, output, &pcAlreadyIncremented);
         break;
       case 0b100001: // cbr, sbr
         subOpcode = registers[IR] & 0x1;
@@ -385,9 +386,8 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         break;
 
       default: // Unknown instruction
-
-        unknownInstruction(registers, output, &pcAlreadyIncremented);
         prepareForISR(registers, mem8);
+        unknownInstruction(registers, output, &pcAlreadyIncremented);
       }
     }
     if (!pcAlreadyIncremented)
@@ -2079,27 +2079,30 @@ void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
  * Iterruption
  *******************************************************/
 
-void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
 {
   // Execution of behavior
-  registers[SP] += 4;
-  registers[IPC] = mem8[registers[SP]];
+  *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
+  const uint32_t oldPC = registers[PC];
 
   registers[SP] += 4;
-  registers[CR] = mem8[registers[SP]];
+  registers[IPC] = readMemory32(mem8, registers[SP]);
 
   registers[SP] += 4;
-  registers[PC] = mem8[registers[SP]];
+  registers[CR] = readMemory32(mem8, registers[SP]);
+
+  registers[SP] += 4;
+  registers[PC] = readMemory32(mem8, registers[SP]);
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[300] = {0};
 
   sprintf(instruction, "reti");
-  sprintf(additionalInfo, "IPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X", registers[IPC], registers[SP] - 8, registers[CR], registers[SP] - 4, registers[PC], registers[SP]);
+  sprintf(additionalInfo, "IPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X", registers[SP] - 8, registers[IPC], registers[SP] - 4, registers[CR], registers[SP], registers[PC]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
 void cbr(uint32_t registers[NUM_REGISTERS], FILE *output)
@@ -2188,7 +2191,6 @@ void prepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
   mem8[registers[SP] + 2] = ((registers[PC] + 4) >> 8) & 0xFF;
   mem8[registers[SP] + 3] = (registers[PC] + 4) & 0xFF;
   registers[SP] -= 4;
-
   // MEM[SP] = CR
   mem8[registers[SP] + 0] = (registers[CR] >> 24) & 0xFF;
   mem8[registers[SP] + 1] = (registers[CR] >> 16) & 0xFF;
@@ -2196,7 +2198,7 @@ void prepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
   mem8[registers[SP] + 3] = (registers[CR]) & 0xFF;
   registers[SP] -= 4;
 
-  // MEM[SP] = CR
+  // MEM[SP] = IPC
   mem8[registers[SP] + 0] = (registers[IPC] >> 24) & 0xFF;
   mem8[registers[SP] + 1] = (registers[IPC] >> 16) & 0xFF;
   mem8[registers[SP] + 2] = (registers[IPC] >> 8) & 0xFF;
@@ -2363,4 +2365,12 @@ void printInterruptMessage(uint32_t address, FILE *output)
     fprintf(output, "[HARDWARE INTERRUPTION 4]\n%s", "");
     break;
   }
+}
+
+uint32_t readMemory32(uint8_t *mem8, uint32_t memoryAddress)
+{
+  return ((mem8[memoryAddress] << 24) |
+          (mem8[memoryAddress + 1] << 16) |
+          (mem8[memoryAddress + 2] << 8) |
+          (mem8[memoryAddress + 3] << 0));
 }
