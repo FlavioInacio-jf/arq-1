@@ -1874,6 +1874,7 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
   // Execution of behavior
   *(pcAlreadyIncremented) = true; // Prevent it from being incremented
   const uint32_t oldPC = registers[PC];
+  const uint32_t oldSP = registers[SP];
 
   mem8[registers[SP]] = ((registers[PC] + 4) >> 24) & 0xFF;
   mem8[registers[SP] + 1] = ((registers[PC] + 4) >> 16) & 0xFF;
@@ -1889,7 +1890,7 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
 
   sprintf(instruction, "call [%s%s%i]",
           formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
-  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", registers[PC], registers[SP] + 4, oldPC + 4);
+  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", registers[PC], oldSP, oldPC + 4);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1904,6 +1905,7 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
   *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
 
   const uint32_t oldPC = registers[PC];
+  const uint32_t oldSP = registers[SP];
 
   mem8[registers[SP]] = ((registers[PC] + 4) >> 24) & 0xFF;
   mem8[registers[SP] + 1] = ((registers[PC] + 4) >> 16) & 0xFF;
@@ -1918,7 +1920,7 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "call %i", i);
-  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", registers[PC], registers[SP], oldPC + 4);
+  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", registers[PC], oldSP, oldPC + 4);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
