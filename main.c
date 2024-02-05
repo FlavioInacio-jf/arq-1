@@ -107,6 +107,7 @@ void cbr(uint32_t registers[NUM_REGISTERS], FILE *output);
 void sbr(uint32_t registers[NUM_REGISTERS], FILE *output);
 void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output);
 
+void prepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
 void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
 
 int isZNSet(uint32_t registers[NUM_REGISTERS]);
@@ -384,7 +385,9 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         break;
 
       default: // Unknown instruction
+
         unknownInstruction(registers, output, &pcAlreadyIncremented);
+        prepareForISR(registers, mem8);
       }
     }
     if (!pcAlreadyIncremented)
@@ -417,7 +420,7 @@ void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "mov %s,%u", formatRegisterName(z, true), xyl);
-  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), xyl);
+  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
@@ -438,7 +441,7 @@ void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "movs %s,%i", formatRegisterName(z, true), xyl);
-  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), xyl);
+  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
@@ -1908,14 +1911,14 @@ void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
   mem8[registers[SP] + 3] = ((registers[PC] + 4) >> 0) & 0xFF;
 
   registers[PC] = registers[PC] + 4 + (i << 2);
-  registers[SP] = registers[SP] - 4;
+  registers[SP] -= 4;
 
   // Instruction formatting
   char instruction[30] = {0};
-  char additionalInfo[42] = {0};
+  char additionalInfo[100] = {0};
 
   sprintf(instruction, "call %i", i);
-  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", registers[PC], registers[SP] + 4, oldPC + 4);
+  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", registers[PC], registers[SP], oldPC + 4);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1956,6 +1959,8 @@ void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   const uint32_t operands[] = {v, w, x, y, z};
 
   // Execution of behavior
+  const uint32_t oldSP = registers[SP];
+
   for (uint8_t i = 0; i < 5; i++)
   {
     const uint32_t operand = operands[i];
@@ -2000,7 +2005,7 @@ void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
                           (i > 0) ? (",") : (""), formatRegisterName(operand, false));
   }
 
-  sprintf(additionalInfo, "MEM[0x%08X]{%s}={%s}", registers[SP], registerValues, registerLabels);
+  sprintf(additionalInfo, "MEM[0x%08X]{%s}={%s}", oldSP, registerValues, registerLabels);
 
   // Output
   printInstruction(registers[PC], output, instruction, additionalInfo);
@@ -2172,6 +2177,30 @@ void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output)
 /******************************************************
  * Routines interrupt handling
  *******************************************************/
+
+void prepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
+{
+  // MEM[SP] = PC + 4
+  mem8[registers[SP] + 0] = ((registers[PC] + 4) >> 24) & 0xFF;
+  mem8[registers[SP] + 1] = ((registers[PC] + 4) >> 16) & 0xFF;
+  mem8[registers[SP] + 2] = ((registers[PC] + 4) >> 8) & 0xFF;
+  mem8[registers[SP] + 3] = (registers[PC] + 4) & 0xFF;
+  registers[SP] -= 4;
+
+  // MEM[SP] = CR
+  mem8[registers[SP] + 0] = (registers[CR] >> 24) & 0xFF;
+  mem8[registers[SP] + 1] = (registers[CR] >> 16) & 0xFF;
+  mem8[registers[SP] + 2] = (registers[CR] >> 8) & 0xFF;
+  mem8[registers[SP] + 3] = (registers[CR]) & 0xFF;
+  registers[SP] -= 4;
+
+  // MEM[SP] = CR
+  mem8[registers[SP] + 0] = (registers[IPC] >> 24) & 0xFF;
+  mem8[registers[SP] + 1] = (registers[IPC] >> 16) & 0xFF;
+  mem8[registers[SP] + 2] = (registers[IPC] >> 8) & 0xFF;
+  mem8[registers[SP] + 3] = (registers[IPC]) & 0xFF;
+  registers[SP] -= 4;
+}
 
 void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
 {
