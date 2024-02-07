@@ -58,7 +58,9 @@ struct FPU
 
 struct Watchdog
 {
+  uint32_t registers;
 };
+typedef struct TWatchdog Watchdog;
 
 struct DMA
 {
@@ -81,6 +83,8 @@ typedef struct TSystem System;
 void initializeSystem(System *system, FILE *input, FILE *output);
 void loadMemoryFromFile(System *system, FILE *input); // Load memory vector from a file
 void decodeInstructions(System *system, FILE *output);
+
+void updateWatchdog(System *system);
 
 void mov(CPU *cpu, FILE *output);
 void movs(CPU *cpu, FILE *output);
@@ -443,6 +447,30 @@ void decodeInstructions(System *system, FILE *output)
   // Output formatting to file
   fprintf(output, "[END OF SIMULATION]\n");
   printf("[END OF SIMULATION]\n");
+}
+
+/******************************************************
+ * Watchdog
+ *******************************************************/
+void updateWatchdog(System *system)
+{
+  const uint32_t en = system->watchdog.registers & 0x80000000;
+  if (en)
+  {
+    uint32_t counterValue = system->watchdog.registers & 0x7FFFFFFF;
+
+    if (counterValue > 0)
+    {
+      counterValue--;
+      system->watchdog.registers = (system->watchdog.registers & 0x80000000) | counterValue;
+    }
+    else
+    {
+      system->watchdog.registers = ~0x80000000; // EN = 0
+      /* if (!isIESet(&system->cpu))
+        system->controlData.interruptionCode = WATCHDOG_INTERRUPT_ADDR; */
+    }
+  }
 }
 
 /******************************************************
