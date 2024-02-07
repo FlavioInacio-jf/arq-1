@@ -70,7 +70,7 @@ void addi(uint32_t registers[NUM_REGISTERS], FILE *output);
 void subi(uint32_t registers[NUM_REGISTERS], FILE *output);
 void muli(uint32_t registers[NUM_REGISTERS], FILE *output);
 void divi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptionCode);
-void modi(uint32_t registers[NUM_REGISTERS], FILE *output);
+void modi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptionCode);
 void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output);
 
 void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
@@ -105,9 +105,13 @@ void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
 void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
 void cbr(uint32_t registers[NUM_REGISTERS], FILE *output);
 void sbr(uint32_t registers[NUM_REGISTERS], FILE *output);
-void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output);
+void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, bool *run, FILE *output, uint32_t *interruptionCode);
 
 void handprepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
+void savePCPlus4ToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
+void saveCRToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
+void saveIPCToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
+
 void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented, uint32_t *interruptionCode);
 
 int isZNSet(uint32_t registers[NUM_REGISTERS]);
@@ -279,7 +283,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         divi(registers, output, &interruptionCode);
         break;
       case 0b010110: // modi
-        modi(registers, output);
+        modi(registers, output, &interruptionCode);
         break;
       case 0b010111: // cmpi
         cmpi(registers, output);
@@ -383,7 +387,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         }
         break;
       case 0b111111: // int
-        interrupt(registers, &run, output);
+        interrupt(registers, mem8, &run, output, &interruptionCode);
         break;
 
       default: // Unknown instruction
@@ -1277,7 +1281,7 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptio
   printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
-void modi(uint32_t registers[NUM_REGISTERS], FILE *output)
+void modi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptionCode)
 {
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
@@ -1296,7 +1300,10 @@ void modi(uint32_t registers[NUM_REGISTERS], FILE *output)
     registers[SR] &= ~ZN_FLAG;
 
   if (i == 0)
+  {
     registers[SR] |= ZD_FLAG;
+    (*interruptionCode) = DIVIDE_BY_ZERO_ADDR;
+  }
   else
     registers[SR] &= ~ZD_FLAG;
 
@@ -2158,7 +2165,7 @@ void sbr(uint32_t registers[NUM_REGISTERS], FILE *output)
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output)
+void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, bool *run, FILE *output, uint32_t *interruptionCode)
 {
   // Fetch operands
   const uint32_t i = registers[IR] & 0x3FFFFF;
@@ -2172,9 +2179,12 @@ void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output)
   }
   else
   {
+    handprepareForISR(registers, mem8);
+
     registers[CR] = i;
-    registers[IPC] = oldPC;
+    registers[IPC] = registers[PC];
     registers[PC] = SOFTWARE_INTERRUPT_ADDR;
+    (*interruptionCode) = SOFTWARE_INTERRUPT_ADDR;
   }
 
   // Instruction formatting
@@ -2192,27 +2202,38 @@ void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output)
  * Routines interrupt handling
  *******************************************************/
 
-void handprepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
+void savePCPlus4ToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
 {
-  // MEM[SP] = PC + 4
   mem8[registers[SP] + 0] = ((registers[PC] + 4) >> 24) & 0xFF;
   mem8[registers[SP] + 1] = ((registers[PC] + 4) >> 16) & 0xFF;
   mem8[registers[SP] + 2] = ((registers[PC] + 4) >> 8) & 0xFF;
   mem8[registers[SP] + 3] = (registers[PC] + 4) & 0xFF;
   registers[SP] -= 4;
-  // MEM[SP] = CR
+}
+
+void saveCRToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
+{
   mem8[registers[SP] + 0] = (registers[CR] >> 24) & 0xFF;
   mem8[registers[SP] + 1] = (registers[CR] >> 16) & 0xFF;
   mem8[registers[SP] + 2] = (registers[CR] >> 8) & 0xFF;
   mem8[registers[SP] + 3] = (registers[CR]) & 0xFF;
   registers[SP] -= 4;
+}
 
-  // MEM[SP] = IPC
+void saveIPCToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
+{
   mem8[registers[SP] + 0] = (registers[IPC] >> 24) & 0xFF;
   mem8[registers[SP] + 1] = (registers[IPC] >> 16) & 0xFF;
   mem8[registers[SP] + 2] = (registers[IPC] >> 8) & 0xFF;
   mem8[registers[SP] + 3] = (registers[IPC]) & 0xFF;
   registers[SP] -= 4;
+}
+
+void handprepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
+{
+  savePCPlus4ToStack(registers, mem8);
+  saveCRToStack(registers, mem8);
+  saveIPCToStack(registers, mem8);
 }
 
 void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented, uint32_t *interruptionCode)
@@ -2306,14 +2327,20 @@ char *formatRegisterName(uint8_t registerNumber, bool lower)
 {
   char *result;
 
-  if (registerNumber >= (NUM_REGISTERS - 4))
+  if ((registerNumber >= 26))
   {
-    char instruction[3] = {0};
+    char instruction[4] = {0};
 
     switch (registerNumber)
     {
     case IR:
       sprintf(instruction, "IR");
+      break;
+    case CR:
+      sprintf(instruction, "CR");
+      break;
+    case IPC:
+      sprintf(instruction, "IPC");
       break;
     case PC:
       sprintf(instruction, "PC");
