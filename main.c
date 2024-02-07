@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
   uint32_t registers[NUM_REGISTERS] = {0};
 
   // 32 KiB memory initialized to zero
-  uint8_t *mem8 = (uint8_t *)(calloc(NUM_REGISTERS, 1024));
+  uint8_t *mem8 = (uint8_t *)(calloc(32 * 1024, sizeof(uint8_t)));
 
   loadMemory(input, mem8);
   decodeInstructions(registers, mem8, output);
@@ -1815,12 +1815,12 @@ void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? registers[x] + i : i;
 
-  if (memoryAddress <= 1024)
+  if (memoryAddress < (NUM_REGISTERS * 1024))
     mem8[memoryAddress] = registers[z];
 
   // Instruction formatting
-  char instruction[30] = {0};
-  char additionalInfo[100] = {0};
+  char instruction[50] = {0};
+  char additionalInfo[200] = {0};
 
   sprintf(instruction, "s8 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
   sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%02X", memoryAddress, formatRegisterName(z, false), registers[z]);
@@ -1838,8 +1838,11 @@ void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 1) : i << 1;
-  mem8[memoryAddress] = (registers[z] >> 24) & 0xFF;
-  mem8[memoryAddress + 1] = (registers[z] >> 16) & 0xFF;
+  if (memoryAddress < (NUM_REGISTERS * 1024))
+  {
+    mem8[memoryAddress] = (registers[z] >> 24) & 0xFF;
+    mem8[memoryAddress + 1] = (registers[z] >> 16) & 0xFF;
+  }
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1861,10 +1864,13 @@ void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 2) : i << 2;
-  mem8[memoryAddress + 0] = (registers[z] >> 24) & 0xFF;
-  mem8[memoryAddress + 1] = (registers[z] >> 16) & 0xFF;
-  mem8[memoryAddress + 2] = (registers[z] >> 8) & 0xFF;
-  mem8[memoryAddress + 3] = (registers[z]) & 0xFF;
+  if (memoryAddress < (NUM_REGISTERS * 1024))
+  {
+    mem8[memoryAddress + 0] = (registers[z] >> 24) & 0xFF;
+    mem8[memoryAddress + 1] = (registers[z] >> 16) & 0xFF;
+    mem8[memoryAddress + 2] = (registers[z] >> 8) & 0xFF;
+    mem8[memoryAddress + 3] = (registers[z]) & 0xFF;
+  }
 
   // Instruction formatting
   char instruction[30] = {0};
