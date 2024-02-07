@@ -69,7 +69,7 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output);
 void addi(uint32_t registers[NUM_REGISTERS], FILE *output);
 void subi(uint32_t registers[NUM_REGISTERS], FILE *output);
 void muli(uint32_t registers[NUM_REGISTERS], FILE *output);
-void divi(uint32_t registers[NUM_REGISTERS], FILE *output);
+void divi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptionCode);
 void modi(uint32_t registers[NUM_REGISTERS], FILE *output);
 void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output);
 
@@ -107,8 +107,8 @@ void cbr(uint32_t registers[NUM_REGISTERS], FILE *output);
 void sbr(uint32_t registers[NUM_REGISTERS], FILE *output);
 void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output);
 
-void prepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
-void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void handprepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
+void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented, uint32_t *interruptionCode);
 
 int isZNSet(uint32_t registers[NUM_REGISTERS]);
 int isZDSet(uint32_t registers[NUM_REGISTERS]);
@@ -122,7 +122,7 @@ int32_t extendSign32(uint32_t value, uint8_t significantBit);
 int64_t extendSign64(uint32_t value, uint8_t significantBit);
 void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo);
 char *formatRegisterName(uint8_t registerNumber, bool lower);
-void printInterruptMessage(uint32_t address, FILE *output);
+void handleInterrupt(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *interruptionCode, FILE *output);
 uint32_t readMemory32(uint8_t *mem8, uint32_t memoryAddress);
 
 // Principal function
@@ -192,6 +192,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
 
   bool run = true;
   bool pcAlreadyIncremented = false; // Flag to track whether the PC has been incremented
+  uint32_t interruptionCode = 999;
 
   while (run)
   {
@@ -275,7 +276,7 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         muli(registers, output);
         break;
       case 0b010101: // divi
-        divi(registers, output);
+        divi(registers, output, &interruptionCode);
         break;
       case 0b010110: // modi
         modi(registers, output);
@@ -386,14 +387,19 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
         break;
 
       default: // Unknown instruction
-        prepareForISR(registers, mem8);
-        unknownInstruction(registers, output, &pcAlreadyIncremented);
+        handprepareForISR(registers, mem8);
+        unknownInstruction(registers, output, &pcAlreadyIncremented, &interruptionCode);
       }
     }
-    if (!pcAlreadyIncremented)
+
+    if (interruptionCode != 999)
+      handleInterrupt(registers, mem8, &interruptionCode, output);
+
+    if (!pcAlreadyIncremented && interruptionCode == 999)
       registers[PC] += 4; // PC = PC + 4 (next instruction)
 
     pcAlreadyIncremented = false;
+    interruptionCode = 999;
   }
 
   // Output formatting to file
@@ -1227,7 +1233,7 @@ void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
   printInstruction(registers[PC], output, instruction, additionalInfo);
 }
 
-void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
+void divi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptionCode)
 {
   // Fetch operands
   const uint8_t z = (registers[IR] >> 21) & 0x1F;
@@ -1249,7 +1255,10 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output)
   }
 
   if (i == 0)
+  {
     registers[SR] |= ZD_FLAG;
+    (*interruptionCode) = DIVIDE_BY_ZERO_ADDR;
+  }
   else
     registers[SR] &= ~ZD_FLAG;
 
@@ -2183,7 +2192,7 @@ void interrupt(uint32_t registers[NUM_REGISTERS], bool *run, FILE *output)
  * Routines interrupt handling
  *******************************************************/
 
-void prepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
+void handprepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
 {
   // MEM[SP] = PC + 4
   mem8[registers[SP] + 0] = ((registers[PC] + 4) >> 24) & 0xFF;
@@ -2206,7 +2215,7 @@ void prepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
   registers[SP] -= 4;
 }
 
-void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented, uint32_t *interruptionCode)
 {
 
   // Execution of behavior
@@ -2226,8 +2235,7 @@ void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *p
   printf("%s", instruction);
   fprintf(output, "%s", instruction);
 
-  // Screen output formatting
-  printInterruptMessage((uint32_t)SOFTWARE_INTERRUPT_ADDR, output);
+  (*interruptionCode) = INVALID_INSTRUCTION_ADDR;
 }
 
 /******************************************************
@@ -2339,32 +2347,50 @@ char *formatRegisterName(uint8_t registerNumber, bool lower)
   return result;
 }
 
-void printInterruptMessage(uint32_t address, FILE *output)
+void handleInterrupt(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *interruptionCode, FILE *output)
 {
+  char interruptMessage[100] = {0};
 
-  switch (address)
+  switch (*interruptionCode)
   {
+  case INVALID_INSTRUCTION_ADDR:
+    sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
+    break;
   case SOFTWARE_INTERRUPT_ADDR:
-    printf("[SOFTWARE INTERRUPTION]\n");
-    fprintf(output, "[SOFTWARE INTERRUPTION]\n%s", "");
+    sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
+    break;
+  case DIVIDE_BY_ZERO_ADDR:
+    handprepareForISR(registers, mem8);
+
+    registers[SR] |= ZD_FLAG;
+    if (isIESet(registers))
+    {
+      registers[SR] |= ZD_FLAG;
+      registers[CR] = 0;
+      registers[IPC] = registers[PC];
+      registers[PC] = DIVIDE_BY_ZERO_ADDR;
+    }
+
+    sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
     break;
   case HARDWARE1_INTERRUPT_ADDR:
-    printf("[HARDWARE INTERRUPTION 1]\n");
-    fprintf(output, "[HARDWARE INTERRUPTION 1]\n%s", "");
+    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 1]");
     break;
   case HARDWARE2_INTERRUPT_ADDR:
-    printf("[HARDWARE INTERRUPTION 2]\n");
-    fprintf(output, "[HARDWARE INTERRUPTION 2]\n%s", "");
+    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 2]");
     break;
   case HARDWARE3_INTERRUPT_ADDR:
-    printf("[HARDWARE INTERRUPTION 3]\n");
-    fprintf(output, "[HARDWARE INTERRUPTION 3]\n%s", "");
+    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 3]");
     break;
   case HARDWARE4_INTERRUPT_ADDR:
-    printf("[HARDWARE INTERRUPTION 4]\n");
-    fprintf(output, "[HARDWARE INTERRUPTION 4]\n%s", "");
+    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 4]");
+    break;
+  default:
     break;
   }
+
+  printf("%s\n", interruptMessage);
+  fprintf(output, "%s\n%s", interruptMessage, "");
 }
 
 uint32_t readMemory32(uint8_t *mem8, uint32_t memoryAddress)
