@@ -1562,9 +1562,9 @@ void bbt(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = system->cpu.registers[PC];
-  if (isCYSet(cpu))
+  if (isCYSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
@@ -1586,9 +1586,9 @@ void beq(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = system->cpu.registers[PC];
-  if (isZNSet(cpu))
+  if (isZNSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
@@ -1606,14 +1606,14 @@ void beq(System *system, FILE *output)
 void bge(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(cpu->registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = cpu->registers[PC];
-  if (isSNSet(cpu) == isOVSet(cpu))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (isSNSet(&system->cpu) == isOVSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    cpu->registers[PC] = cpu->registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1622,7 +1622,7 @@ void bge(System *system, FILE *output)
 
   sprintf(instruction, "bge %i", i);
   sprintf(additionalInfo, "PC=0x%08X",
-          isSNSet(&system->cpu) != isOVSet(&system->cpu) ? cpu->registers[PC] + 4 : cpu->registers[PC]);
+          isSNSet(&system->cpu) != isOVSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1631,14 +1631,14 @@ void bge(System *system, FILE *output)
 void bgt(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(cpu->registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = cpu->registers[PC];
-  if (!isZNSet(cpu) && (isSNSet(cpu) == isOVSet(cpu)))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (!isZNSet(&system->cpu) && (isSNSet(&system->cpu) == isOVSet(&system->cpu)))
   {
-    *(pcAlreadyIncremented) = true;
-    cpu->registers[PC] = cpu->registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1646,7 +1646,7 @@ void bgt(System *system, FILE *output)
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bgt %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", isZNSet(&system->cpu) || (isSNSet(&system->cpu) != isOVSet(&system->cpu)) ? cpu->registers[PC] + 4 : cpu->registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isZNSet(&system->cpu) || (isSNSet(&system->cpu) != isOVSet(&system->cpu)) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1659,9 +1659,9 @@ void biv(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = system->cpu.registers[PC];
-  if (isIVSet(cpu))
+  if (isIVSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
@@ -1683,9 +1683,9 @@ void ble(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = system->cpu.registers[PC];
-  if (isZNSet(cpu) || (isSNSet(cpu) != isOVSet(cpu)))
+  if (isZNSet(&system->cpu) || (isSNSet(&system->cpu) != isOVSet(&system->cpu)))
   {
-    *(pcAlreadyIncremented) = true;
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
@@ -1707,9 +1707,9 @@ void blt(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = system->cpu.registers[PC];
-  if (isSNSet(cpu) != isOVSet(cpu))
+  if (isSNSet(&system->cpu) != isOVSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
@@ -1731,9 +1731,9 @@ void bne(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = system->cpu.registers[PC];
-  if (!isZNSet(cpu))
+  if (!isZNSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
@@ -1755,9 +1755,9 @@ void bni(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = system->cpu.registers[PC];
-  if (!isIVSet(cpu))
+  if (!isIVSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
@@ -1779,9 +1779,9 @@ void bnz(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = system->cpu.registers[PC];
-  if (!isZDSet(cpu))
+  if (!isZDSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
@@ -1799,13 +1799,13 @@ void bnz(System *system, FILE *output)
 void bzd(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(system->cpu.registers & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = system->cpu.registers;
-  if (isZDSet(cpu))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (isZDSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
@@ -1814,7 +1814,7 @@ void bzd(System *system, FILE *output)
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bzd %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", !isZDSet(&system->cpu) ? system->cpu.registers + 4 : system->cpu.registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isZDSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1823,11 +1823,11 @@ void bzd(System *system, FILE *output)
 void bun(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(csystem->cpu.registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  *(pcAlreadyIncremented) = true;
-  const uint32_t oldPC =system->cpu.registers[PC];
+  system->control.pcAlreadyIncremented = true;
+  const uint32_t oldPC = system->cpu.registers[PC];
   system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
 
   // Instruction formatting
@@ -1857,7 +1857,7 @@ void l8(System *system, FILE *output)
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? system->cpu.registers[x] + i : i;
 
-  if (z != 0)
+  if (z != 0 && memoryAddress < (NUM_REGISTERS * 1024))
     system->cpu.registers[z] = system->memory[memoryAddress];
 
   // Instruction formatting
@@ -1883,7 +1883,7 @@ void l16(System *system, FILE *output)
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 1) : i << 1;
 
-  if (z != 0)
+  if (z != 0 && memoryAddress < (NUM_REGISTERS * 1024))
     system->cpu.registers[z] = ((system->memory[memoryAddress] << 24) |
                                 (system->memory[memoryAddress + 1] << 16));
 
@@ -1910,7 +1910,7 @@ void l32(System *system, FILE *output)
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 2) : i << 2;
 
-  if (z != 0)
+  if (z != 0 && memoryAddress < (NUM_REGISTERS * 1024))
     system->cpu.registers[z] = readMemory32(system, memoryAddress);
 
   // Instruction formatting
@@ -2012,7 +2012,7 @@ void s32(System *system, FILE *output)
  * Subroutine call operation
  *******************************************************/
 
-void callf(System *system, FILE *output, bool *pcAlreadyIncremented)
+void callf(System *system, FILE *output)
 {
   // Fetch operands
   const uint32_t ir = system->cpu.registers[IR];
@@ -2021,7 +2021,7 @@ void callf(System *system, FILE *output, bool *pcAlreadyIncremented)
   const int32_t i = extendSign32(ir & 0xFFFF, 16);
 
   // Execution of behavior
-  *(pcAlreadyIncremented) = true; // Prevent it from being incremented
+  system->control.pcAlreadyIncremented = true; // Prevent it from being incremented
   const uint32_t oldPC = system->cpu.registers[PC];
   const uint32_t oldSP = system->cpu.registers[SP];
 
@@ -2045,13 +2045,13 @@ void callf(System *system, FILE *output, bool *pcAlreadyIncremented)
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void calls(System *system, FILE *output, bool *pcAlreadyIncremented)
+void calls(System *system, FILE *output)
 {
   // Fetch operands
   const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
+  system->control.pcAlreadyIncremented = true; // Prevent it from being incremented twice
 
   const uint32_t oldPC = system->cpu.registers[PC];
   const uint32_t oldSP = system->cpu.registers[SP];
@@ -2075,10 +2075,10 @@ void calls(System *system, FILE *output, bool *pcAlreadyIncremented)
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void ret(System *system, FILE *output, bool *pcAlreadyIncremented)
+void ret(System *system, FILE *output)
 {
   // Execution of behavior
-  *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
+  system->control.pcAlreadyIncremented = true; // Prevent it from being incremented twice
 
   const uint32_t oldPC = system->cpu.registers[PC];
   system->cpu.registers[SP] += 4;
@@ -2226,10 +2226,10 @@ void pop(System *system, FILE *output)
  * Iterruption
  *******************************************************/
 
-void reti(System *system, FILE *output, bool *pcAlreadyIncremented)
+void reti(System *system, FILE *output)
 {
   // Execution of behavior
-  *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
+  system->control.pcAlreadyIncremented = true; // Prevent it from being incremented twice
   const uint32_t oldPC = system->cpu.registers[PC];
 
   system->cpu.registers[SP] += 4;
@@ -2300,7 +2300,7 @@ void sbr(CPU *cpu, FILE *output)
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void interrupt(System *system, bool *run, FILE *output, uint32_t *interruptionCode)
+void interrupt(System *system, FILE *output)
 {
   // Fetch operands
   const uint32_t i = system->cpu.registers[IR] & 0x3FFFFF;
@@ -2309,7 +2309,7 @@ void interrupt(System *system, bool *run, FILE *output, uint32_t *interruptionCo
   const uint32_t oldPC = system->cpu.registers[PC];
   if (i == 0)
   {
-    (*run) = 0;
+    system->control.run = true;
     memset(system->cpu.registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
   }
   else
@@ -2319,7 +2319,7 @@ void interrupt(System *system, bool *run, FILE *output, uint32_t *interruptionCo
     system->cpu.registers[CR] = i;
     system->cpu.registers[IPC] = system->cpu.registers[PC];
     system->cpu.registers[PC] = SOFTWARE_INTERRUPT_ADDR;
-    (*interruptionCode) = SOFTWARE_INTERRUPT_ADDR;
+    system->control.interruptionCode = SOFTWARE_INTERRUPT_ADDR;
   }
 
   // Instruction formatting
@@ -2371,17 +2371,17 @@ void handprepareForISR(System *system)
   saveIPCToStack(system);
 }
 
-void unknownInstruction(CPU *cpu, FILE *output, bool *pcAlreadyIncremented, uint32_t *interruptionCode)
+void unknownInstruction(System *system, FILE *output)
 {
 
   // Execution of behavior
-  *(pcAlreadyIncremented) = true;
-  const uint32_t oldPC = cpu->registers[PC];
+  system->control.pcAlreadyIncremented = true;
+  const uint32_t oldPC = system->cpu.registers[PC];
 
-  cpu->registers[SR] |= IV_FLAG;
-  cpu->registers[CR] = (cpu->registers[IR] >> 26) & 0x3F;
-  cpu->registers[IPC] = cpu->registers[PC];
-  cpu->registers[PC] = INVALID_INSTRUCTION_ADDR;
+  system->cpu.registers[SR] |= IV_FLAG;
+  system->cpu.registers[CR] = (system->cpu.registers[IR] >> 26) & 0x3F;
+  system->cpu.registers[IPC] = system->cpu.registers[PC];
+  system->cpu.registers[PC] = INVALID_INSTRUCTION_ADDR;
 
   // Instruction formatting
   char instruction[100] = {0};
@@ -2391,7 +2391,7 @@ void unknownInstruction(CPU *cpu, FILE *output, bool *pcAlreadyIncremented, uint
   printf("%s", instruction);
   fprintf(output, "%s", instruction);
 
-  (*interruptionCode) = INVALID_INSTRUCTION_ADDR;
+  system->control.interruptionCode = INVALID_INSTRUCTION_ADDR;
 }
 
 /******************************************************
@@ -2509,11 +2509,11 @@ char *formatRegisterName(uint8_t registerNumber, bool lower)
   return result;
 }
 
-void handleInterrupt(System *system, uint32_t *interruptionCode, FILE *output)
+void handleInterrupt(System *system, FILE *output)
 {
   char interruptMessage[100] = {0};
 
-  switch (*interruptionCode)
+  switch (system->control.interruptionCode)
   {
   case INVALID_INSTRUCTION_ADDR:
     sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
