@@ -1385,10 +1385,7 @@ void divi(System *system, FILE *output)
   }
 
   if (i == 0)
-  {
     system->cpu.registers[SR] |= ZD_FLAG;
-    handleDivideByZero(system, output);
-  }
   else
     system->cpu.registers[SR] &= ~ZD_FLAG;
 
@@ -1405,6 +1402,9 @@ void divi(System *system, FILE *output)
 
   // Output
   printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
+
+  if (i == 0)
+    handleDivideByZero(system, output);
 }
 
 void modi(System *system, FILE *output)
@@ -1428,10 +1428,7 @@ void modi(System *system, FILE *output)
     system->cpu.registers[SR] &= ~ZN_FLAG;
 
   if (i == 0)
-  {
     system->cpu.registers[SR] |= ZD_FLAG;
-    handleDivideByZero(system, output);
-  }
   else
     system->cpu.registers[SR] &= ~ZD_FLAG;
 
@@ -1447,6 +1444,9 @@ void modi(System *system, FILE *output)
 
   // Output
   printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
+
+  if (i == 0)
+    handleDivideByZero(system, output);
 }
 
 void cmpi(CPU *cpu, FILE *output)
@@ -2496,7 +2496,11 @@ void printInterruptMessage(uint32_t code, FILE *output)
 
   switch (code)
   {
+
   case SOFTWARE_INTERRUPT_ADDR:
+    sprintf(message, "[SOFTWARE INTERRUPTION]");
+    break;
+  case INVALID_INSTRUCTION_ADDR:
     sprintf(message, "[SOFTWARE INTERRUPTION]");
     break;
   case DIVIDE_BY_ZERO_ADDR:
