@@ -496,7 +496,8 @@ void updateWatchdog(System *system, FILE *output)
   {
     system->control.pcAlreadyIncremented = true;
     system->control.interrupt.hasInterrupt = false;
-    
+    system->cpu.registers[PC] = HARDWARE1_INTERRUPT_ADDR;
+
     handlePrepareForISR(system);
     printInterruptMessage(HARDWARE1_INTERRUPT_ADDR, output);
   }
