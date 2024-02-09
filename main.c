@@ -66,11 +66,18 @@ struct DMA
 {
 };
 
+struct TInterrupt
+{
+  bool hasInterrupt;
+  uint32_t code;
+};
+typedef struct TInterrupt Interrupt;
+
 struct TControl
 {
   bool run;
   bool pcAlreadyIncremented;
-  uint32_t interruptionCode;
+  Interrupt interrupt;
 };
 typedef struct TControl Control;
 
@@ -154,12 +161,9 @@ void cbr(CPU *cpu, FILE *output);
 void sbr(CPU *cpu, FILE *output);
 void interrupt(System *system, FILE *output);
 
-void handprepareForISR(System *system);
-void savePCPlus4ToStack(System *system);
-void saveCRToStack(System *system);
-void saveIPCToStack(System *system);
-
 void unknownInstruction(System *system, FILE *output);
+
+void handprepareForISR(System *system);
 
 int isZNSet(CPU *cpu);
 int isZDSet(CPU *cpu);
@@ -211,7 +215,7 @@ void initializeSystem(System *system, FILE *input, FILE *output)
   // Initialized control variables
   system->control.run = true;
   system->control.pcAlreadyIncremented = false;
-  system->control.interruptionCode = 999;
+  system->control.interrupt.hasInterrupt = false;
 
   decodeInstructions(system, output);
 
@@ -443,14 +447,14 @@ void decodeInstructions(System *system, FILE *output)
       }
     }
 
-    if (system->control.interruptionCode != 999)
+    if (system->control.interrupt.hasInterrupt)
       handleInterrupt(system, output);
 
-    if (!system->control.pcAlreadyIncremented && system->control.interruptionCode == 999)
-      system->cpu.registers[PC] += 4; // PC = PC + 4 (next instruction)
+    if (!system->control.pcAlreadyIncremented && !system->control.interrupt.hasInterrupt)
+      system->cpu.registers[PC] += 4; // next instruction
 
     system->control.pcAlreadyIncremented = false;
-    system->control.interruptionCode = 999;
+    system->control.interrupt.hasInterrupt = false;
   }
 
   // Output formatting to file
@@ -477,7 +481,7 @@ void updateWatchdog(System *system)
     {
       system->watchdog.registers = ~0x80000000; // EN = 0
       /* if (!isIESet(&system->cpu))
-        system->control.interruptionCode = WATCHDOG_INTERRUPT_ADDR; */
+        system->control.interrupt.code = WATCHDOG_INTERRUPT_ADDR; */
     }
   }
 }
@@ -1373,7 +1377,8 @@ void divi(System *system, FILE *output)
   if (i == 0)
   {
     system->cpu.registers[SR] |= ZD_FLAG;
-    system->control.interruptionCode = DIVIDE_BY_ZERO_ADDR;
+    system->control.interrupt.hasInterrupt = true;
+    system->control.interrupt.code = DIVIDE_BY_ZERO_ADDR;
   }
   else
     system->cpu.registers[SR] &= ~ZD_FLAG;
@@ -1416,7 +1421,8 @@ void modi(System *system, FILE *output)
   if (i == 0)
   {
     system->cpu.registers[SR] |= ZD_FLAG;
-    system->control.interruptionCode = DIVIDE_BY_ZERO_ADDR;
+    system->control.interrupt.hasInterrupt = true;
+    system->control.interrupt.code = DIVIDE_BY_ZERO_ADDR;
   }
   else
     system->cpu.registers[SR] &= ~ZD_FLAG;
@@ -2319,7 +2325,9 @@ void interrupt(System *system, FILE *output)
     system->cpu.registers[CR] = i;
     system->cpu.registers[IPC] = system->cpu.registers[PC];
     system->cpu.registers[PC] = SOFTWARE_INTERRUPT_ADDR;
-    system->control.interruptionCode = SOFTWARE_INTERRUPT_ADDR;
+
+    system->control.interrupt.hasInterrupt = true;
+    system->control.interrupt.code = SOFTWARE_INTERRUPT_ADDR;
   }
 
   // Instruction formatting
@@ -2337,38 +2345,25 @@ void interrupt(System *system, FILE *output)
  * Routines interrupt handling
  *******************************************************/
 
-void savePCPlus4ToStack(System *system)
+void handprepareForISR(System *system)
 {
   system->memory[system->cpu.registers[SP] + 0] = ((system->cpu.registers[PC] + 4) >> 24) & 0xFF;
   system->memory[system->cpu.registers[SP] + 1] = ((system->cpu.registers[PC] + 4) >> 16) & 0xFF;
   system->memory[system->cpu.registers[SP] + 2] = ((system->cpu.registers[PC] + 4) >> 8) & 0xFF;
   system->memory[system->cpu.registers[SP] + 3] = (system->cpu.registers[PC] + 4) & 0xFF;
   system->cpu.registers[SP] -= 4;
-}
 
-void saveCRToStack(System *system)
-{
   system->memory[system->cpu.registers[SP] + 0] = (system->cpu.registers[CR] >> 24) & 0xFF;
   system->memory[system->cpu.registers[SP] + 1] = (system->cpu.registers[CR] >> 16) & 0xFF;
   system->memory[system->cpu.registers[SP] + 2] = (system->cpu.registers[CR] >> 8) & 0xFF;
   system->memory[system->cpu.registers[SP] + 3] = (system->cpu.registers[CR]) & 0xFF;
   system->cpu.registers[SP] -= 4;
-}
 
-void saveIPCToStack(System *system)
-{
   system->memory[system->cpu.registers[SP] + 0] = (system->cpu.registers[IPC] >> 24) & 0xFF;
   system->memory[system->cpu.registers[SP] + 1] = (system->cpu.registers[IPC] >> 16) & 0xFF;
   system->memory[system->cpu.registers[SP] + 2] = (system->cpu.registers[IPC] >> 8) & 0xFF;
   system->memory[system->cpu.registers[SP] + 3] = (system->cpu.registers[IPC]) & 0xFF;
   system->cpu.registers[SP] -= 4;
-}
-
-void handprepareForISR(System *system)
-{
-  savePCPlus4ToStack(system);
-  saveCRToStack(system);
-  saveIPCToStack(system);
 }
 
 void unknownInstruction(System *system, FILE *output)
@@ -2391,7 +2386,8 @@ void unknownInstruction(System *system, FILE *output)
   printf("%s", instruction);
   fprintf(output, "%s", instruction);
 
-  system->control.interruptionCode = INVALID_INSTRUCTION_ADDR;
+  system->control.interrupt.hasInterrupt = true;
+  system->control.interrupt.code = INVALID_INSTRUCTION_ADDR;
 }
 
 /******************************************************
@@ -2513,7 +2509,7 @@ void handleInterrupt(System *system, FILE *output)
 {
   char interruptMessage[100] = {0};
 
-  switch (system->control.interruptionCode)
+  switch (system->control.interrupt.code)
   {
   case INVALID_INSTRUCTION_ADDR:
     sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
