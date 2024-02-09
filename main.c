@@ -42,6 +42,8 @@
 #define HARDWARE3_INTERRUPT_ADDR 0x00000018
 #define HARDWARE4_INTERRUPT_ADDR 0x0000001C
 
+#define WATCHDOG_ADDR 0x80808080
+
 /******************************************************
  * Types
  *******************************************************/
@@ -101,7 +103,7 @@ void initializeSystem(System *system, FILE *input, FILE *output);
 void loadMemoryFromFile(System *system, FILE *input); // Load memory vector from a file
 void decodeInstructions(System *system, FILE *output);
 
-void updateWatchdog(System *system);
+void updateWatchdog(System *system, FILE *output);
 
 void mov(CPU *cpu, FILE *output);
 void movs(CPU *cpu, FILE *output);
@@ -213,7 +215,7 @@ void initializeSystem(System *system, FILE *input, FILE *output)
   memset(system->cpu.registers, 0, sizeof(system->cpu.registers));
 
   // watchdog
-  system->watchdog.registers = 0x80000000;
+  system->watchdog.registers = 0;
 
   // 32 KiB memory initialized to zero
   system->memory = (uint8_t *)(calloc(32 * 1024, sizeof(uint8_t)));
@@ -454,7 +456,7 @@ void decodeInstructions(System *system, FILE *output)
       }
     }
 
-    updateWatchdog(system); // Update the timer every instruction cycle
+    updateWatchdog(system, output); // Update the timer every instruction cycle
 
     if (!system->control.pcAlreadyIncremented && !system->control.interrupt.hasInterrupt)
       system->cpu.registers[PC] += 4; // next instruction
@@ -471,12 +473,12 @@ void decodeInstructions(System *system, FILE *output)
 /******************************************************
  * Watchdog
  *******************************************************/
-void updateWatchdog(System *system)
+void updateWatchdog(System *system, FILE *output)
 {
-  const uint32_t en = system->watchdog.registers & 0x80000000;
+  const int32_t en = system->watchdog.registers & 0x80000000;
   if (en)
   {
-    uint32_t counterValue = system->watchdog.registers & 0x7FFFFFFF;
+    int32_t counterValue = system->watchdog.registers & 0x7FFFFFFF;
 
     if (counterValue > 0)
     {
@@ -485,12 +487,11 @@ void updateWatchdog(System *system)
     }
     else
     {
-      system->watchdog.registers = ~0x80000000; // EN = 0
-      if (!isIESet(&system->cpu))
-      {
-        system->control.interrupt.hasInterrupt = true;
-        system->control.interrupt.code = HARDWARE1_INTERRUPT_ADDR;
-      }
+      handlePrepareForISR(system);
+
+      system->watchdog.registers = 0x00000000; // EN = 0
+      system->control.interrupt.hasInterrupt = true;
+      printInterruptMessage(HARDWARE1_INTERRUPT_ADDR, output);
     }
   }
 }
@@ -2002,12 +2003,17 @@ void s32(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 2) : i << 2;
-  if (memoryAddress < (NUM_REGISTERS * 1024))
+  if (memoryAddress == WATCHDOG_ADDR)
+    system->watchdog.registers = system->cpu.registers[z];
+  else
   {
-    system->memory[memoryAddress + 0] = (system->cpu.registers[z] >> 24) & 0xFF;
-    system->memory[memoryAddress + 1] = (system->cpu.registers[z] >> 16) & 0xFF;
-    system->memory[memoryAddress + 2] = (system->cpu.registers[z] >> 8) & 0xFF;
-    system->memory[memoryAddress + 3] = (system->cpu.registers[z]) & 0xFF;
+    if (memoryAddress < (NUM_REGISTERS * 1024))
+    {
+      system->memory[memoryAddress + 0] = (system->cpu.registers[z] >> 24) & 0xFF;
+      system->memory[memoryAddress + 1] = (system->cpu.registers[z] >> 16) & 0xFF;
+      system->memory[memoryAddress + 2] = (system->cpu.registers[z] >> 8) & 0xFF;
+      system->memory[memoryAddress + 3] = (system->cpu.registers[z]) & 0xFF;
+    }
   }
 
   // Instruction formatting
