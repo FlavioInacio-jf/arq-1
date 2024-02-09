@@ -458,11 +458,10 @@ void decodeInstructions(System *system, FILE *output)
 
     updateWatchdog(system, output); // Update the timer every instruction cycle
 
-    if (!system->control.pcAlreadyIncremented && !system->control.interrupt.hasInterrupt)
+    if (!system->control.pcAlreadyIncremented)
       system->cpu.registers[PC] += 4; // next instruction
 
     system->control.pcAlreadyIncremented = false;
-    system->control.interrupt.hasInterrupt = false;
   }
 
   // Output formatting to file
@@ -476,10 +475,10 @@ void decodeInstructions(System *system, FILE *output)
 void updateWatchdog(System *system, FILE *output)
 {
   const int32_t en = system->watchdog.registers & 0x80000000;
+  int32_t counterValue = system->watchdog.registers & 0x7FFFFFFF;
+
   if (en)
   {
-    int32_t counterValue = system->watchdog.registers & 0x7FFFFFFF;
-
     if (counterValue > 0)
     {
       counterValue--;
@@ -488,14 +487,18 @@ void updateWatchdog(System *system, FILE *output)
     else
     {
       system->watchdog.registers = 0x00000000; // EN = 0
-      /* fprintf(output, "SRR=0x%08X\n", system->cpu.registers[SR]); */
-      if (isIESet(&system->cpu))
-      {
-        handlePrepareForISR(system);
+      if (!isIESet(&system->cpu))
         system->control.interrupt.hasInterrupt = true;
-        printInterruptMessage(HARDWARE1_INTERRUPT_ADDR, output);
-      }
     }
+  }
+
+  if (system->control.interrupt.hasInterrupt && isIESet(&system->cpu))
+  {
+    system->control.pcAlreadyIncremented = true;
+    system->control.interrupt.hasInterrupt = false;
+    
+    handlePrepareForISR(system);
+    printInterruptMessage(HARDWARE1_INTERRUPT_ADDR, output);
   }
 }
 
@@ -2398,7 +2401,7 @@ void handlePrepareForISR(System *system)
 
 void handleDivideByZero(System *system, FILE *output)
 {
-  system->control.interrupt.hasInterrupt = true;
+  system->control.pcAlreadyIncremented = true;
   handlePrepareForISR(system);
 
   system->cpu.registers[SR] |= ZD_FLAG;
@@ -2415,7 +2418,7 @@ void handleDivideByZero(System *system, FILE *output)
 
 void handleInvalidInstruction(System *system, FILE *output)
 {
-  system->control.interrupt.hasInterrupt = true;
+  system->control.pcAlreadyIncremented = true;
   handlePrepareForISR(system);
 
   system->cpu.registers[CR] = (system->cpu.registers[IR] >> 26) & 0x3F;
@@ -2433,7 +2436,7 @@ void handleInterrupt(System *system, FILE *output)
   system->cpu.registers[IPC] = system->cpu.registers[PC];
   system->cpu.registers[PC] = SOFTWARE_INTERRUPT_ADDR;
 
-  system->control.interrupt.hasInterrupt = true;
+  system->control.pcAlreadyIncremented = true;
 }
 
 /******************************************************
