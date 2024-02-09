@@ -488,6 +488,7 @@ void updateWatchdog(System *system, FILE *output)
     else
     {
       system->watchdog.registers = 0x00000000; // EN = 0
+      /* fprintf(output, "SRR=0x%08X\n", system->cpu.registers[SR]); */
       if (isIESet(&system->cpu))
       {
         handlePrepareForISR(system);
@@ -1464,12 +1465,12 @@ void cmpi(CPU *cpu, FILE *output)
   const uint64_t result = valueX - (uint64_t)i;
 
   if (result == 0)
-    cpu->registers[SR] |= ZN_FLAG; // error
+    cpu->registers[SR] |= ZN_FLAG;
   else
     cpu->registers[SR] &= ~ZN_FLAG;
 
   if ((result & 0x80000000))
-    cpu->registers[SR] |= SN_FLAG; // error
+    cpu->registers[SR] |= SN_FLAG;
   else
     cpu->registers[SR] &= ~SN_FLAG;
 
@@ -2283,7 +2284,8 @@ void cbr(CPU *cpu, FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = cpu->registers[PC];
-  cpu->registers[z] &= ~(0x00000001 << x);
+  if (z != 0)
+    cpu->registers[z] &= ~(0x00000001 << x);
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -2307,7 +2309,8 @@ void sbr(CPU *cpu, FILE *output)
 
   // Execution of behavior
   const uint32_t oldPC = cpu->registers[PC];
-  cpu->registers[z] |= (0x00000001 << x);
+  if (z != 0)
+    cpu->registers[z] |= (0x00000001 << x);
 
   // Instruction formatting
   char instruction[30] = {0};
