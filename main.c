@@ -58,7 +58,7 @@ struct FPU
 
 struct TWatchdog
 {
-  uint32_t registers;
+  int32_t registers;
 };
 typedef struct TWatchdog Watchdog;
 
@@ -163,7 +163,9 @@ void interrupt(System *system, FILE *output);
 
 void unknownInstruction(System *system, FILE *output);
 
-void handprepareForISR(System *system);
+void handleDivideByZero(System *system, FILE *output);
+void handleInvalidInstruction(System *system, FILE *output);
+void handlePrepareForISR(System *system);
 
 int isZNSet(CPU *cpu);
 int isZDSet(CPU *cpu);
@@ -175,9 +177,12 @@ int isCYSet(CPU *cpu);
 
 int32_t extendSign32(uint32_t value, uint8_t significantBit);
 int64_t extendSign64(uint32_t value, uint8_t significantBit);
-void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo);
+
 char *formatRegisterName(uint8_t registerNumber, bool lower);
-void handleInterrupt(System *system, FILE *output);
+
+void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo);
+void printInterruptMessage(uint32_t code, FILE *output);
+
 uint32_t readMemory32(System *system, uint32_t memoryAddress);
 
 int main(int argc, char *argv[])
@@ -206,6 +211,9 @@ void initializeSystem(System *system, FILE *input, FILE *output)
 {
   // 32 registers initialized to zero
   memset(system->cpu.registers, 0, sizeof(system->cpu.registers));
+
+  // watchdog
+  system->watchdog.registers = 0x80000000;
 
   // 32 KiB memory initialized to zero
   system->memory = (uint8_t *)(calloc(32 * 1024, sizeof(uint8_t)));
@@ -442,13 +450,11 @@ void decodeInstructions(System *system, FILE *output)
         break;
 
       default: // Unknown instruction
-        handprepareForISR(system);
         unknownInstruction(system, output);
       }
     }
 
-    if (system->control.interrupt.hasInterrupt)
-      handleInterrupt(system, output);
+    updateWatchdog(system); // Update the timer every instruction cycle
 
     if (!system->control.pcAlreadyIncremented && !system->control.interrupt.hasInterrupt)
       system->cpu.registers[PC] += 4; // next instruction
@@ -480,8 +486,11 @@ void updateWatchdog(System *system)
     else
     {
       system->watchdog.registers = ~0x80000000; // EN = 0
-      /* if (!isIESet(&system->cpu))
-        system->control.interrupt.code = WATCHDOG_INTERRUPT_ADDR; */
+      if (!isIESet(&system->cpu))
+      {
+        system->control.interrupt.hasInterrupt = true;
+        system->control.interrupt.code = HARDWARE1_INTERRUPT_ADDR;
+      }
     }
   }
 }
@@ -1377,8 +1386,7 @@ void divi(System *system, FILE *output)
   if (i == 0)
   {
     system->cpu.registers[SR] |= ZD_FLAG;
-    system->control.interrupt.hasInterrupt = true;
-    system->control.interrupt.code = DIVIDE_BY_ZERO_ADDR;
+    handleDivideByZero(system, output);
   }
   else
     system->cpu.registers[SR] &= ~ZD_FLAG;
@@ -1421,8 +1429,7 @@ void modi(System *system, FILE *output)
   if (i == 0)
   {
     system->cpu.registers[SR] |= ZD_FLAG;
-    system->control.interrupt.hasInterrupt = true;
-    system->control.interrupt.code = DIVIDE_BY_ZERO_ADDR;
+    handleDivideByZero(system, output);
   }
   else
     system->cpu.registers[SR] &= ~ZD_FLAG;
@@ -2315,12 +2322,12 @@ void interrupt(System *system, FILE *output)
   const uint32_t oldPC = system->cpu.registers[PC];
   if (i == 0)
   {
-    system->control.run = true;
+    system->control.run = false;
     memset(system->cpu.registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
   }
   else
   {
-    handprepareForISR(system);
+    handlePrepareForISR(system);
 
     system->cpu.registers[CR] = i;
     system->cpu.registers[IPC] = system->cpu.registers[PC];
@@ -2341,11 +2348,29 @@ void interrupt(System *system, FILE *output)
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
+void unknownInstruction(System *system, FILE *output)
+{
+  // Execution of behavior
+  const uint32_t oldPC = system->cpu.registers[PC];
+
+  system->cpu.registers[SR] |= IV_FLAG;
+
+  // Instruction formatting
+  char instruction[100] = {0};
+  sprintf(instruction, "[INVALID INSTRUCTION @ 0x%08X]\n", oldPC);
+
+  // Output formatting to file
+  printf("%s", instruction);
+  fprintf(output, "%s", instruction);
+
+  handleInvalidInstruction(system, output);
+}
+
 /******************************************************
  * Routines interrupt handling
  *******************************************************/
 
-void handprepareForISR(System *system)
+void handlePrepareForISR(System *system)
 {
   system->memory[system->cpu.registers[SP] + 0] = ((system->cpu.registers[PC] + 4) >> 24) & 0xFF;
   system->memory[system->cpu.registers[SP] + 1] = ((system->cpu.registers[PC] + 4) >> 16) & 0xFF;
@@ -2366,28 +2391,33 @@ void handprepareForISR(System *system)
   system->cpu.registers[SP] -= 4;
 }
 
-void unknownInstruction(System *system, FILE *output)
+void handleDivideByZero(System *system, FILE *output)
 {
+  system->control.interrupt.hasInterrupt = true;
+  handlePrepareForISR(system);
 
-  // Execution of behavior
-  system->control.pcAlreadyIncremented = true;
-  const uint32_t oldPC = system->cpu.registers[PC];
+  system->cpu.registers[SR] |= ZD_FLAG;
+  if (isIESet(&system->cpu))
+  {
+    system->cpu.registers[SR] |= ZD_FLAG;
+    system->cpu.registers[CR] = 0;
+    system->cpu.registers[IPC] = system->cpu.registers[PC];
+    system->cpu.registers[PC] = DIVIDE_BY_ZERO_ADDR;
+  }
 
-  system->cpu.registers[SR] |= IV_FLAG;
+  printInterruptMessage(DIVIDE_BY_ZERO_ADDR, output);
+}
+
+void handleInvalidInstruction(System *system, FILE *output)
+{
+  system->control.interrupt.hasInterrupt = true;
+  handlePrepareForISR(system);
+
   system->cpu.registers[CR] = (system->cpu.registers[IR] >> 26) & 0x3F;
   system->cpu.registers[IPC] = system->cpu.registers[PC];
   system->cpu.registers[PC] = INVALID_INSTRUCTION_ADDR;
 
-  // Instruction formatting
-  char instruction[100] = {0};
-  sprintf(instruction, "[INVALID INSTRUCTION @ 0x%08X]\n", oldPC);
-
-  // Output formatting to file
-  printf("%s", instruction);
-  fprintf(output, "%s", instruction);
-
-  system->control.interrupt.hasInterrupt = true;
-  system->control.interrupt.code = INVALID_INSTRUCTION_ADDR;
+  printInterruptMessage(INVALID_INSTRUCTION_ADDR, output);
 }
 
 /******************************************************
@@ -2454,6 +2484,38 @@ void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additi
   fprintf(output, "0x%08X:\t%-25s\t%s\n", pc, instruction, additionalInfo);
 }
 
+void printInterruptMessage(uint32_t code, FILE *output)
+{
+  char message[300] = {0};
+
+  switch (code)
+  {
+  case SOFTWARE_INTERRUPT_ADDR:
+    sprintf(message, "[SOFTWARE INTERRUPTION]");
+    break;
+  case DIVIDE_BY_ZERO_ADDR:
+    sprintf(message, "[SOFTWARE INTERRUPTION]");
+    break;
+  case HARDWARE1_INTERRUPT_ADDR:
+    sprintf(message, "[HARDWARE INTERRUPTION 1]");
+    break;
+  case HARDWARE2_INTERRUPT_ADDR:
+    sprintf(message, "[HARDWARE INTERRUPTION 2]");
+    break;
+  case HARDWARE3_INTERRUPT_ADDR:
+    sprintf(message, "[HARDWARE INTERRUPTION 3]");
+    break;
+  case HARDWARE4_INTERRUPT_ADDR:
+    sprintf(message, "[HARDWARE INTERRUPTION 4]");
+    break;
+  default:
+    break;
+  }
+
+  printf("%s\n", message);
+  fprintf(output, "%s\n", message);
+}
+
 char *formatRegisterName(uint8_t registerNumber, bool lower)
 {
   char *result;
@@ -2503,52 +2565,6 @@ char *formatRegisterName(uint8_t registerNumber, bool lower)
   }
 
   return result;
-}
-
-void handleInterrupt(System *system, FILE *output)
-{
-  char interruptMessage[100] = {0};
-
-  switch (system->control.interrupt.code)
-  {
-  case INVALID_INSTRUCTION_ADDR:
-    sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
-    break;
-  case SOFTWARE_INTERRUPT_ADDR:
-    sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
-    break;
-  case DIVIDE_BY_ZERO_ADDR:
-    handprepareForISR(system);
-
-    system->cpu.registers[SR] |= ZD_FLAG;
-    if (isIESet(&system->cpu))
-    {
-      system->cpu.registers[SR] |= ZD_FLAG;
-      system->cpu.registers[CR] = 0;
-      system->cpu.registers[IPC] = system->cpu.registers[PC];
-      system->cpu.registers[PC] = DIVIDE_BY_ZERO_ADDR;
-    }
-
-    sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
-    break;
-  case HARDWARE1_INTERRUPT_ADDR:
-    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 1]");
-    break;
-  case HARDWARE2_INTERRUPT_ADDR:
-    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 2]");
-    break;
-  case HARDWARE3_INTERRUPT_ADDR:
-    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 3]");
-    break;
-  case HARDWARE4_INTERRUPT_ADDR:
-    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 4]");
-    break;
-  default:
-    break;
-  }
-
-  printf("%s\n", interruptMessage);
-  fprintf(output, "%s\n%s", interruptMessage, "");
 }
 
 uint32_t readMemory32(System *system, uint32_t memoryAddress)
