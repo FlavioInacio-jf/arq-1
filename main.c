@@ -71,7 +71,6 @@ struct DMA
 struct TInterrupt
 {
   bool hasInterrupt;
-  uint32_t code;
 };
 typedef struct TInterrupt Interrupt;
 
@@ -167,6 +166,7 @@ void unknownInstruction(System *system, FILE *output);
 
 void handleDivideByZero(System *system, FILE *output);
 void handleInvalidInstruction(System *system, FILE *output);
+void handleInterrupt(System *system, FILE *output);
 void handlePrepareForISR(System *system);
 
 int isZNSet(CPU *cpu);
@@ -487,11 +487,13 @@ void updateWatchdog(System *system, FILE *output)
     }
     else
     {
-      handlePrepareForISR(system);
-
       system->watchdog.registers = 0x00000000; // EN = 0
-      system->control.interrupt.hasInterrupt = true;
-      printInterruptMessage(HARDWARE1_INTERRUPT_ADDR, output);
+      if (isIESet(&system->cpu))
+      {
+        handlePrepareForISR(system);
+        system->control.interrupt.hasInterrupt = true;
+        printInterruptMessage(HARDWARE1_INTERRUPT_ADDR, output);
+      }
     }
   }
 }
@@ -2332,16 +2334,7 @@ void interrupt(System *system, FILE *output)
     memset(system->cpu.registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
   }
   else
-  {
-    handlePrepareForISR(system);
-
-    system->cpu.registers[CR] = i;
-    system->cpu.registers[IPC] = system->cpu.registers[PC];
-    system->cpu.registers[PC] = SOFTWARE_INTERRUPT_ADDR;
-
-    system->control.interrupt.hasInterrupt = true;
-    system->control.interrupt.code = SOFTWARE_INTERRUPT_ADDR;
-  }
+    handleInterrupt(system, output);
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -2352,6 +2345,9 @@ void interrupt(System *system, FILE *output)
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
+
+  if (i != 0)
+    printInterruptMessage(INIT_INTERRUPT_ADDR, output);
 }
 
 void unknownInstruction(System *system, FILE *output)
@@ -2426,6 +2422,17 @@ void handleInvalidInstruction(System *system, FILE *output)
   printInterruptMessage(INVALID_INSTRUCTION_ADDR, output);
 }
 
+void handleInterrupt(System *system, FILE *output)
+{
+  handlePrepareForISR(system);
+
+  system->cpu.registers[CR] = system->cpu.registers[IR] & 0x3FFFFF;
+  system->cpu.registers[IPC] = system->cpu.registers[PC];
+  system->cpu.registers[PC] = SOFTWARE_INTERRUPT_ADDR;
+
+  system->control.interrupt.hasInterrupt = true;
+}
+
 /******************************************************
  * Fetch from the status register(SR)
  *******************************************************/
@@ -2496,7 +2503,7 @@ void printInterruptMessage(uint32_t code, FILE *output)
 
   switch (code)
   {
-
+  case INIT_INTERRUPT_ADDR:
   case SOFTWARE_INTERRUPT_ADDR:
     sprintf(message, "[SOFTWARE INTERRUPTION]");
     break;
