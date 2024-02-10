@@ -489,8 +489,7 @@ void updateWatchdog(System *system, FILE *output)
     else
     {
       system->watchdog.registers = 0x00000000; // EN = 0
-      if (!isIESet(&system->cpu))
-        system->control.interrupt.hasInterrupt = true;
+      system->control.interrupt.hasInterrupt = true;
     }
   }
 
@@ -500,6 +499,8 @@ void updateWatchdog(System *system, FILE *output)
 
     system->control.pcAlreadyIncremented = true;
     system->control.interrupt.hasInterrupt = false;
+    
+    system->cpu.registers[IPC] = system->cpu.registers[PC];
     system->cpu.registers[PC] = HARDWARE1_INTERRUPT_ADDR;
     system->cpu.registers[CR] = HARDWARE1_INTERRUPT_CODE;
 
