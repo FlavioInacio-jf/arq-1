@@ -32,7 +32,7 @@
 #define IE_FLAG 0b00000010
 #define CY_FLAG 0b00000001
 
-// Interrupt Address
+// Interrupt addresses
 #define INIT_INTERRUPT_ADDR 0x00000000
 #define DIVIDE_BY_ZERO_ADDR 0x00000008
 #define INVALID_INSTRUCTION_ADDR 0x00000004
@@ -41,124 +41,169 @@
 #define HARDWARE2_INTERRUPT_ADDR 0x00000014
 #define HARDWARE3_INTERRUPT_ADDR 0x00000018
 #define HARDWARE4_INTERRUPT_ADDR 0x0000001C
+#define WATCHDOG_ADDR 0x80808080
+
+// Interrupt codes
+#define HARDWARE1_INTERRUPT_CODE 0xE1AC04DA
+
+/******************************************************
+ * Types
+ *******************************************************/
+
+struct TCPU
+{
+  uint32_t registers[NUM_REGISTERS];
+};
+typedef struct TCPU CPU;
+
+struct FPU
+{
+};
+
+struct TWatchdog
+{
+  int32_t registers;
+};
+typedef struct TWatchdog Watchdog;
+
+struct DMA
+{
+};
+
+struct TInterrupt
+{
+  bool hasInterrupt;
+};
+typedef struct TInterrupt Interrupt;
+
+struct TControl
+{
+  bool run;
+  bool pcAlreadyIncremented;
+  Interrupt interrupt;
+};
+typedef struct TControl Control;
+
+struct TSystem
+{
+  CPU cpu;
+  struct FPU fpu;
+  Watchdog watchdog;
+  struct DMA dma;
+  uint8_t *memory;
+
+  Control control;
+};
+
+typedef struct TSystem System;
 
 /******************************************************
  * Functin Signature
  *******************************************************/
+void initializeSystem(System *system, FILE *input, FILE *output);
+void loadMemoryFromFile(System *system, FILE *input); // Load memory vector from a file
+void decodeInstructions(System *system, FILE *output);
 
-void loadMemory(FILE *input, uint8_t *mem8); // Load memory vector from a file
-void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void updateWatchdog(System *system, FILE *output);
 
-void mov(uint32_t registers[NUM_REGISTERS], FILE *output);
-void movs(uint32_t registers[NUM_REGISTERS], FILE *output);
-void add(uint32_t registers[NUM_REGISTERS], FILE *output);
-void sub(uint32_t registers[NUM_REGISTERS], FILE *output);
-void mul(uint32_t registers[NUM_REGISTERS], FILE *output);
-void sll(uint32_t registers[NUM_REGISTERS], FILE *output);
-void muls(uint32_t registers[NUM_REGISTERS], FILE *output);
-void sla(uint32_t registers[NUM_REGISTERS], FILE *output);
-void divv(uint32_t registers[NUM_REGISTERS], FILE *output);
-void srl(uint32_t registers[NUM_REGISTERS], FILE *output);
-void divs(uint32_t registers[NUM_REGISTERS], FILE *output);
-void sra(uint32_t registers[NUM_REGISTERS], FILE *output);
-void cmp(uint32_t registers[NUM_REGISTERS], FILE *output);
-void and (uint32_t registers[NUM_REGISTERS], FILE *output);
-void or (uint32_t registers[NUM_REGISTERS], FILE *output);
-void not(uint32_t registers[NUM_REGISTERS], FILE *output);
-void xor (uint32_t registers[NUM_REGISTERS], FILE *output);
-void addi(uint32_t registers[NUM_REGISTERS], FILE *output);
-void subi(uint32_t registers[NUM_REGISTERS], FILE *output);
-void muli(uint32_t registers[NUM_REGISTERS], FILE *output);
-void divi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptionCode);
-void modi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptionCode);
-void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output);
+void mov(CPU *cpu, FILE *output);
+void movs(CPU *cpu, FILE *output);
+void add(CPU *cpu, FILE *output);
+void sub(CPU *cpu, FILE *output);
+void mul(CPU *cpu, FILE *output);
+void sll(CPU *cpu, FILE *output);
+void muls(CPU *cpu, FILE *output);
+void sla(CPU *cpu, FILE *output);
+void divv(CPU *cpu, FILE *output);
+void srl(CPU *cpu, FILE *output);
+void divs(CPU *cpu, FILE *output);
+void sra(CPU *cpu, FILE *output);
+void cmp(CPU *cpu, FILE *output);
+void and (CPU * cpu, FILE *output);
+void or (CPU * cpu, FILE *output);
+void not(CPU * cpu, FILE *output);
+void xor (CPU * cpu, FILE *output);
+void addi(CPU *cpu, FILE *output);
+void subi(CPU *cpu, FILE *output);
+void muli(CPU *cpu, FILE *output);
+void divi(System *system, FILE *output);
+void modi(System *system, FILE *output);
+void cmpi(CPU *cpu, FILE *output);
 
-void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
-void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented);
+void bae(System *system, FILE *output);
+void bat(System *system, FILE *output);
+void bbe(System *system, FILE *output);
+void bbt(System *system, FILE *output);
+void beq(System *system, FILE *output);
+void bge(System *system, FILE *output);
+void bgt(System *system, FILE *output);
+void biv(System *system, FILE *output);
+void ble(System *system, FILE *output);
+void blt(System *system, FILE *output);
+void bne(System *system, FILE *output);
+void bni(System *system, FILE *output);
+void bnz(System *system, FILE *output);
+void bzd(System *system, FILE *output);
+void bun(System *system, FILE *output);
 
-void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void l8(System *system, FILE *output);
+void l16(System *system, FILE *output);
+void l32(System *system, FILE *output);
+void s8(System *system, FILE *output);
+void s16(System *system, FILE *output);
+void s32(System *system, FILE *output);
 
-void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
-void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
-void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
-void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
-void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output);
+void callf(System *system, FILE *output);
+void calls(System *system, FILE *output);
+void ret(System *system, FILE *output);
+void push(System *system, FILE *output);
+void pop(System *system, FILE *output);
 
-void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented);
-void cbr(uint32_t registers[NUM_REGISTERS], FILE *output);
-void sbr(uint32_t registers[NUM_REGISTERS], FILE *output);
-void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, bool *run, FILE *output, uint32_t *interruptionCode);
+void reti(System *system, FILE *output);
+void cbr(CPU *cpu, FILE *output);
+void sbr(CPU *cpu, FILE *output);
+void interrupt(System *system, FILE *output);
 
-void handprepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
-void savePCPlus4ToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
-void saveCRToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
-void saveIPCToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8);
+void unknownInstruction(System *system, FILE *output);
 
-void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented, uint32_t *interruptionCode);
+void handleDivideByZero(System *system, FILE *output);
+void handleInvalidInstruction(System *system, FILE *output);
+void handleInterrupt(System *system, FILE *output);
+void handlePrepareForISR(System *system);
 
-int isZNSet(uint32_t registers[NUM_REGISTERS]);
-int isZDSet(uint32_t registers[NUM_REGISTERS]);
-int isSNSet(uint32_t registers[NUM_REGISTERS]);
-int isOVSet(uint32_t registers[NUM_REGISTERS]);
-int isIVSet(uint32_t registers[NUM_REGISTERS]);
-int isIESet(uint32_t registers[NUM_REGISTERS]);
-int isCYSet(uint32_t registers[NUM_REGISTERS]);
+int isZNSet(CPU *cpu);
+int isZDSet(CPU *cpu);
+int isSNSet(CPU *cpu);
+int isOVSet(CPU *cpu);
+int isIVSet(CPU *cpu);
+int isIESet(CPU *cpu);
+int isCYSet(CPU *cpu);
 
 int32_t extendSign32(uint32_t value, uint8_t significantBit);
 int64_t extendSign64(uint32_t value, uint8_t significantBit);
-void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo);
-char *formatRegisterName(uint8_t registerNumber, bool lower);
-void handleInterrupt(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *interruptionCode, FILE *output);
-uint32_t readMemory32(uint8_t *mem8, uint32_t memoryAddress);
 
-// Principal function
+char *formatRegisterName(uint8_t registerNumber, bool lower);
+
+void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additionalInfo);
+void printInterruptMessage(uint32_t code, FILE *output);
+
+uint32_t readMemory32(System *system, uint32_t memoryAddress);
+
 int main(int argc, char *argv[])
 {
   // Input file
   FILE *input = fopen(argv[1], "r");
   if (input == NULL)
-  {
-    perror("Failed to load input file");
     exit(EXIT_FAILURE);
-  }
 
   // Output file
   FILE *output = fopen(argv[2], "w");
   if (output == NULL)
-  {
-    perror("Failed to load output file");
     exit(EXIT_FAILURE);
-  }
 
-  // 32 registers initialized to zero
-  uint32_t registers[NUM_REGISTERS] = {0};
+  System system;
+  initializeSystem(&system, input, output);
 
-  // 32 KiB memory initialized to zero
-  uint8_t *mem8 = (uint8_t *)(calloc(32 * 1024, sizeof(uint8_t)));
-
-  loadMemory(input, mem8);
-  decodeInstructions(registers, mem8, output);
-
-  fclose(input);
-  fclose(output);
   return 0;
 }
 
@@ -166,9 +211,33 @@ int main(int argc, char *argv[])
  * Utility Functions
  *******************************************************/
 
-void loadMemory(FILE *input, uint8_t *mem8)
+void initializeSystem(System *system, FILE *input, FILE *output)
 {
+  // 32 registers initialized to zero
+  memset(system->cpu.registers, 0, sizeof(system->cpu.registers));
 
+  // watchdog
+  system->watchdog.registers = 0;
+
+  // 32 KiB memory initialized to zero
+  system->memory = (uint8_t *)(calloc(32 * 1024, sizeof(uint8_t)));
+
+  loadMemoryFromFile(system, input);
+
+  // Initialized control variables
+  system->control.run = true;
+  system->control.pcAlreadyIncremented = false;
+  system->control.interrupt.hasInterrupt = false;
+
+  decodeInstructions(system, output);
+
+  fclose(input);
+  fclose(output);
+  free(system->memory);
+}
+
+void loadMemoryFromFile(System *system, FILE *input)
+{
   fseek(input, 0, SEEK_SET);
 
   unsigned int count = 0;
@@ -178,232 +247,223 @@ void loadMemory(FILE *input, uint8_t *mem8)
   {
     const uint32_t hexCode = strtoul(hexString, NULL, 16);
 
-    mem8[count] = (hexCode & 0xFF000000) >> 24;
-    mem8[count + 1] = (hexCode & 0x00FF0000) >> 16;
-    mem8[count + 2] = (hexCode & 0x0000FF00) >> 8;
-    mem8[count + 3] = (hexCode & 0x000000FF);
+    system->memory[count] = (hexCode & 0xFF000000) >> 24;
+    system->memory[count + 1] = (hexCode & 0x00FF0000) >> 16;
+    system->memory[count + 2] = (hexCode & 0x0000FF00) >> 8;
+    system->memory[count + 3] = (hexCode & 0x000000FF);
 
     count += 4;
   }
 }
 
-void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void decodeInstructions(System *system, FILE *output)
 {
   // Output formatting to file
   fprintf(output, "[START OF SIMULATION]\n");
 
   printf("[START OF SIMULATION]\n");
 
-  bool run = true;
-  bool pcAlreadyIncremented = false; // Flag to track whether the PC has been incremented
-  uint32_t interruptionCode = 999;
-
-  while (run)
+  while (system->control.run)
   {
-    registers[IR] = ((mem8[registers[PC] + 0] << 24) |
-                     (mem8[registers[PC] + 1] << 16) |
-                     (mem8[registers[PC] + 2] << 8) |
-                     (mem8[registers[PC] + 3] << 0));
+    const uint32_t ir = readMemory32(system, system->cpu.registers[PC]);
 
-    const uint8_t opcode = (registers[IR] >> 26) & 0x3F;
+    system->cpu.registers[IR] = ir;
 
-    if (registers[IR] != 0) // If it is not idle instruction
+    const uint8_t opcode = (ir >> 26) & 0x3F;
+    if (ir != 0) // If it is not idle instruction
     {
       switch (opcode)
       {
       case 0b000000: // mov
-        mov(registers, output);
+        mov(&system->cpu, output);
         break;
       case 0b000001: // movs
-        movs(registers, output);
+        movs(&system->cpu, output);
         break;
       case 0b000010: // add
-        add(registers, output);
+        add(&system->cpu, output);
         break;
       case 0b000011: // sub
-        sub(registers, output);
+        sub(&system->cpu, output);
         break;
       case 0b000100: // mul, sll, muls, sla, div, srl, divs, sra
-        uint8_t subOpcode = (registers[IR] >> 8) & 0x7;
+        uint8_t subOpcode = (ir >> 8) & 0x7;
 
         switch (subOpcode)
         {
         case 0b000: // mul
-          mul(registers, output);
+          mul(&system->cpu, output);
           break;
         case 0b001: // sll
-          sll(registers, output);
+          sll(&system->cpu, output);
           break;
         case 0b010: // muls
-          muls(registers, output);
+          muls(&system->cpu, output);
           break;
         case 0b011: // sla
-          sla(registers, output);
+          sla(&system->cpu, output);
           break;
         case 0b100: // div
-          divv(registers, output);
+          divv(&system->cpu, output);
           break;
         case 0b101: // srl
-          srl(registers, output);
+          srl(&system->cpu, output);
           break;
         case 0b110: // divs
-          divs(registers, output);
+          divs(&system->cpu, output);
           break;
         case 0b111: // sra
-          sra(registers, output);
+          sra(&system->cpu, output);
           break;
         }
 
         break;
       case 0b000101: // cmp
-        cmp(registers, output);
+        cmp(&system->cpu, output);
         break;
       case 0b000110: // and
-        and(registers, output);
+        and(&system->cpu, output);
         break;
       case 0b000111: // or
-        or (registers, output);
+        or (&system->cpu, output);
         break;
       case 0b001000: // not
-        not(registers, output);
+        not(&system->cpu, output);
         break;
       case 0b001001: // xor
-        xor(registers, output);
+        xor(&system->cpu, output);
         break;
       case 0b010010: // addi
-        addi(registers, output);
+        addi(&system->cpu, output);
         break;
       case 0b010011: // subi
-        subi(registers, output);
+        subi(&system->cpu, output);
         break;
       case 0b010100: // muli
-        muli(registers, output);
+        muli(&system->cpu, output);
         break;
       case 0b010101: // divi
-        divi(registers, output, &interruptionCode);
+        divi(system, output);
         break;
       case 0b010110: // modi
-        modi(registers, output, &interruptionCode);
+        modi(system, output);
         break;
       case 0b010111: // cmpi
-        cmpi(registers, output);
+        cmpi(&system->cpu, output);
         break;
 
       case 0b011000: // l8
-        l8(registers, mem8, output);
+        l8(system, output);
         break;
       case 0b011001: // l16
-        l16(registers, mem8, output);
+        l16(system, output);
         break;
       case 0b011010: // l32
-        l32(registers, mem8, output);
+        l32(system, output);
         break;
       case 0b011011: // s8
-        s8(registers, mem8, output);
+        s8(system, output);
         break;
       case 0b011100: // s16
-        s16(registers, mem8, output);
+        s16(system, output);
         break;
       case 0b011101: // s32
-        s32(registers, mem8, output);
+        s32(system, output);
         break;
 
       case 0b101010: // bae
-        bae(registers, output, &pcAlreadyIncremented);
+        bae(system, output);
         break;
       case 0b101011: // bat
-        bat(registers, output, &pcAlreadyIncremented);
+        bat(system, output);
         break;
       case 0b101100: // bbe
-        bbe(registers, output, &pcAlreadyIncremented);
+        bbe(system, output);
         break;
       case 0b101101: // bbt
-        bbt(registers, output, &pcAlreadyIncremented);
+        bbt(system, output);
         break;
       case 0b101110: // beq
-        beq(registers, output, &pcAlreadyIncremented);
+        beq(system, output);
         break;
       case 0b101111: // bge
-        bge(registers, output, &pcAlreadyIncremented);
+        bge(system, output);
         break;
       case 0b110000: // bgt
-        bgt(registers, output, &pcAlreadyIncremented);
+        bgt(system, output);
         break;
       case 0b110001: // biv
-        biv(registers, output, &pcAlreadyIncremented);
+        biv(system, output);
         break;
       case 0b110010: // ble
-        ble(registers, output, &pcAlreadyIncremented);
+        ble(system, output);
         break;
       case 0b110011: // blt
-        blt(registers, output, &pcAlreadyIncremented);
+        blt(system, output);
         break;
       case 0b110100: // bne
-        bne(registers, output, &pcAlreadyIncremented);
+        bne(system, output);
         break;
       case 0b110101: // bni
-        bni(registers, output, &pcAlreadyIncremented);
+        bni(system, output);
         break;
       case 0b110110: // bnz
-        bnz(registers, output, &pcAlreadyIncremented);
+        bnz(system, output);
         break;
       case 0b110111: // bun
-        bun(registers, output, &pcAlreadyIncremented);
+        bun(system, output);
         break;
       case 0b111000: // bzd
-        bzd(registers, output, &pcAlreadyIncremented);
+        bzd(system, output);
         break;
 
       case 0b011110: // call type F
-        callf(registers, mem8, output, &pcAlreadyIncremented);
+        callf(system, output);
         break;
       case 0b111001: // call type S
-        calls(registers, mem8, output, &pcAlreadyIncremented);
+        calls(system, output);
         break;
       case 0b011111: // ret
-        ret(registers, mem8, output, &pcAlreadyIncremented);
+        ret(system, output);
         break;
       case 0b001010: // push
-        push(registers, mem8, output);
+        push(system, output);
         break;
       case 0b001011: // pop
-        pop(registers, mem8, output);
+        pop(system, output);
         break;
 
       case 0b100000: // reti
-        reti(registers, mem8, output, &pcAlreadyIncremented);
+        reti(system, output);
         break;
       case 0b100001: // cbr, sbr
-        subOpcode = registers[IR] & 0x1;
+        subOpcode = ir & 0x1;
 
         switch (subOpcode)
         {
         case 0b0: // cbr
-          cbr(registers, output);
+          cbr(&system->cpu, output);
           break;
         case 0b1: // sbr
-          sbr(registers, output);
+          sbr(&system->cpu, output);
           break;
         }
         break;
       case 0b111111: // int
-        interrupt(registers, mem8, &run, output, &interruptionCode);
+        interrupt(system, output);
         break;
 
       default: // Unknown instruction
-        handprepareForISR(registers, mem8);
-        unknownInstruction(registers, output, &pcAlreadyIncremented, &interruptionCode);
+        unknownInstruction(system, output);
       }
     }
 
-    if (interruptionCode != 999)
-      handleInterrupt(registers, mem8, &interruptionCode, output);
+    updateWatchdog(system, output); // Update the timer every instruction cycle
 
-    if (!pcAlreadyIncremented && interruptionCode == 999)
-      registers[PC] += 4; // PC = PC + 4 (next instruction)
+    if (!system->control.pcAlreadyIncremented)
+      system->cpu.registers[PC] += 4; // next instruction
 
-    pcAlreadyIncremented = false;
-    interruptionCode = 999;
+    system->control.pcAlreadyIncremented = false;
   }
 
   // Output formatting to file
@@ -412,89 +472,131 @@ void decodeInstructions(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *
 }
 
 /******************************************************
+ * Watchdog
+ *******************************************************/
+void updateWatchdog(System *system, FILE *output)
+{
+  const int32_t en = system->watchdog.registers & 0x80000000;
+  int32_t counterValue = system->watchdog.registers & 0x7FFFFFFF;
+
+  if (en)
+  {
+    if (counterValue > 0)
+    {
+      counterValue--;
+      system->watchdog.registers = (system->watchdog.registers & 0x80000000) | counterValue;
+    }
+    else
+    {
+      system->watchdog.registers = 0x00000000; // EN = 0
+      system->control.interrupt.hasInterrupt = true;
+    }
+  }
+
+  if (system->control.interrupt.hasInterrupt && isIESet(&system->cpu))
+  {
+    handlePrepareForISR(system);
+
+    system->control.pcAlreadyIncremented = true;
+    system->control.interrupt.hasInterrupt = false;
+    
+    system->cpu.registers[IPC] = system->cpu.registers[PC];
+    system->cpu.registers[PC] = HARDWARE1_INTERRUPT_ADDR;
+    system->cpu.registers[CR] = HARDWARE1_INTERRUPT_CODE;
+
+    printInterruptMessage(HARDWARE1_INTERRUPT_ADDR, output);
+  }
+}
+
+/******************************************************
  * Arithmetic and logical operations
  *******************************************************/
 
-void mov(uint32_t registers[NUM_REGISTERS], FILE *output)
+void mov(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] & 0x03E00000) >> 21;
-  const uint32_t xyl = registers[IR] & 0x1FFFFF;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = ir >> 21;
+  const uint32_t xyl = ir & 0x1FFFFF;
 
   // Execution of behavior
   if (z != 0)
-    registers[z] = xyl;
+    cpu->registers[z] = xyl;
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "mov %s,%u", formatRegisterName(z, true), xyl);
-  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
+  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), cpu->registers[z]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void movs(uint32_t registers[NUM_REGISTERS], FILE *output)
+void movs(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] & 0x03E00000) >> 21;
-  const int32_t xyl = extendSign32(registers[IR] & 0x1FFFFF, 21);
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir & 0x03E00000) >> 21;
+  const int32_t xyl = extendSign32(ir & 0x1FFFFF, 21);
 
   // Execution of behavior
   if (z != 0)
-    registers[z] = xyl;
+    cpu->registers[z] = xyl;
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "movs %s,%i", formatRegisterName(z, true), xyl);
-  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
+  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), cpu->registers[z]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void add(uint32_t registers[NUM_REGISTERS], FILE *output)
+void add(CPU *cpu, FILE *output)
 {
-
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueX = (uint64_t)registers[x];
-  const uint64_t valueY = (uint64_t)registers[y];
+  const uint64_t valueX = (uint64_t)cpu->registers[x];
+  const uint64_t valueY = (uint64_t)cpu->registers[y];
 
   const uint64_t result = valueX + valueY;
 
   if (z != 0)
-    registers[z] = (uint32_t)result;
+    cpu->registers[z] = (uint32_t)result;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   if ((result & 0x80000000))
-    registers[SR] |= SN_FLAG;
+    cpu->registers[SR] |= SN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   if (
       ((valueX & 0x80000000) == (valueY & 0x80000000)) &&
       ((result & 0x80000000) != (valueX & 0x80000000)))
-    registers[SR] |= OV_FLAG;
+    cpu->registers[SR] |= OV_FLAG;
   else
-    registers[SR] &= ~OV_FLAG;
+    cpu->registers[SR] &= ~OV_FLAG;
 
   if (result > 0xFFFFFFFF)
-    registers[SR] |= CY_FLAG;
+    cpu->registers[SR] |= CY_FLAG;
   else
-    registers[SR] &= ~CY_FLAG;
+    cpu->registers[SR] &= ~CY_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -502,49 +604,51 @@ void add(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "add %s,%s,%s",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s+%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s+%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
+void sub(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueX = (uint64_t)registers[x];
-  const uint64_t valueY = (uint64_t)registers[y];
+  const uint64_t valueX = (uint64_t)cpu->registers[x];
+  const uint64_t valueY = (uint64_t)cpu->registers[y];
 
   const uint64_t result = valueX - valueY;
 
   if (z != 0)
-    registers[z] = (result & 0xFFFFFFFF);
+    cpu->registers[z] = (result & 0xFFFFFFFF);
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   if ((result & 0x80000000))
-    registers[SR] |= SN_FLAG;
+    cpu->registers[SR] |= SN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   if (
       ((valueX & 0x80000000) != (valueY & 0x80000000)) &&
       ((result & 0x80000000) != (valueX & 0x80000000)))
-    registers[SR] |= OV_FLAG;
+    cpu->registers[SR] |= OV_FLAG;
   else
-    registers[SR] &= ~OV_FLAG;
+    cpu->registers[SR] &= ~OV_FLAG;
 
   if (result > 0xFFFFFFFF)
-    registers[SR] |= CY_FLAG;
+    cpu->registers[SR] |= CY_FLAG;
   else
-    registers[SR] &= ~CY_FLAG;
+    cpu->registers[SR] &= ~CY_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -552,40 +656,42 @@ void sub(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "sub %s,%s,%s",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s-%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s-%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void mul(uint32_t registers[NUM_REGISTERS], FILE *output)
+void mul(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
-  const uint8_t l = registers[IR] & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
+  const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueX = (uint64_t)registers[x];
-  const uint64_t valueY = (uint64_t)registers[y];
+  const uint64_t valueX = (uint64_t)cpu->registers[x];
+  const uint64_t valueY = (uint64_t)cpu->registers[y];
 
   const uint64_t result = valueX * valueY;
   if (z != 0)
-    registers[z] = (uint32_t)result;
+    cpu->registers[z] = (uint32_t)result;
 
   if (l != 0)
-    registers[l] = (result >> 32) & 0xFFFFFFFF;
+    cpu->registers[l] = (result >> 32) & 0xFFFFFFFF;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
-  if (registers[l] != 0)
-    registers[SR] |= CY_FLAG;
+  if (cpu->registers[l] != 0)
+    cpu->registers[SR] |= CY_FLAG;
   else
-    registers[SR] &= ~CY_FLAG;
+    cpu->registers[SR] &= ~CY_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -593,41 +699,43 @@ void mul(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "mul %s,%s,%s,%s",
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s:%s=%s*%s=0x%08X%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[l], registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s*%s=0x%08X%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[l], cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void sll(uint32_t registers[NUM_REGISTERS], FILE *output)
+void sll(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
-  const uint8_t l = registers[IR] & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
+  const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueZ = (uint64_t)registers[z];
-  const uint64_t valueY = (uint64_t)registers[y];
+  const uint64_t valueZ = (uint64_t)cpu->registers[z];
+  const uint64_t valueY = (uint64_t)cpu->registers[y];
 
   const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) << (l + 1) : valueY << (l + 1);
 
   if (x != 0)
-    registers[x] = result & 0xFFFFFFFF;
+    cpu->registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
-    registers[z] = (result >> 32) & 0xFFFFFFFF;
+    cpu->registers[z] = (result >> 32) & 0xFFFFFFFF;
 
-  if (registers[z] != 0)
-    registers[SR] |= CY_FLAG;
+  if (cpu->registers[z] != 0)
+    cpu->registers[SR] |= CY_FLAG;
   else
-    registers[SR] &= ~CY_FLAG;
+    cpu->registers[SR] &= ~CY_FLAG;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -635,41 +743,43 @@ void sll(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "sll %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
-  sprintf(additionalInfo, "%s:%s=%s:%s<<%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, registers[z], registers[x], registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s:%s<<%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, cpu->registers[z], cpu->registers[x], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void muls(uint32_t registers[NUM_REGISTERS], FILE *output)
+void muls(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
-  const uint8_t l = registers[IR] & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
+  const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueX = extendSign64(registers[x], 32);
-  const uint64_t valueY = extendSign64(registers[y], 32);
+  const uint64_t valueX = extendSign64(cpu->registers[x], 32);
+  const uint64_t valueY = extendSign64(cpu->registers[y], 32);
 
   const int64_t result = valueX * valueY;
 
   if (z != 0)
-    registers[z] = (uint32_t)result;
+    cpu->registers[z] = (uint32_t)result;
 
   if (l != 0)
-    registers[l] = (result >> 32) & 0xFFFFFFFF;
+    cpu->registers[l] = (result >> 32) & 0xFFFFFFFF;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
-  if (registers[l] != 0)
-    registers[SR] |= OV_FLAG;
+  if (cpu->registers[l] != 0)
+    cpu->registers[SR] |= OV_FLAG;
   else
-    registers[SR] &= ~OV_FLAG;
+    cpu->registers[SR] &= ~OV_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -677,43 +787,45 @@ void muls(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "muls %s,%s,%s,%s",
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s:%s=%s*%s=0x%08X%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[l], registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s*%s=0x%08X%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[l], cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
+void sla(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
-  const uint8_t l = registers[IR] & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
+  const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueZ = (uint64_t)registers[z];
-  const uint64_t valueY = (uint64_t)registers[y];
+  const uint64_t valueZ = (uint64_t)cpu->registers[z];
+  const uint64_t valueY = (uint64_t)cpu->registers[y];
 
   const uint64_t result = ((valueZ << 32) | valueY) << (l + 1);
 
   if (x != 0)
-    registers[x] = result & 0xFFFFFFFF;
+    cpu->registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
   {
-    registers[z] = (result >> 32) & 0xFFFFFFFF;
+    cpu->registers[z] = (result >> 32) & 0xFFFFFFFF;
 
-    if (registers[z] != 0)
-      registers[SR] |= OV_FLAG;
+    if (cpu->registers[z] != 0)
+      cpu->registers[SR] |= OV_FLAG;
     else
-      registers[SR] &= ~OV_FLAG;
+      cpu->registers[SR] &= ~OV_FLAG;
   }
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -721,47 +833,49 @@ void sla(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "sla %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
-  sprintf(additionalInfo, "%s:%s=%s:%s<<%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, registers[z], registers[x], registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s:%s<<%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, cpu->registers[z], cpu->registers[x], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void divv(uint32_t registers[NUM_REGISTERS], FILE *output)
+void divv(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
-  const uint8_t l = registers[IR] & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
+  const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const uint32_t valueX = registers[x];
-  const uint32_t valueY = registers[y];
+  const uint32_t valueX = cpu->registers[x];
+  const uint32_t valueY = cpu->registers[y];
 
   if (valueY != 0)
   {
     if (z != 0)
-      registers[z] = valueX / valueY;
+      cpu->registers[z] = valueX / valueY;
 
     if (l != 0)
-      registers[l] = valueX % valueY;
+      cpu->registers[l] = valueX % valueY;
 
-    if (registers[z] == 0)
-      registers[SR] |= ZN_FLAG;
+    if (cpu->registers[z] == 0)
+      cpu->registers[SR] |= ZN_FLAG;
     else
-      registers[SR] &= ~ZN_FLAG;
+      cpu->registers[SR] &= ~ZN_FLAG;
 
-    if (registers[l] != 0)
-      registers[SR] |= CY_FLAG;
+    if (cpu->registers[l] != 0)
+      cpu->registers[SR] |= CY_FLAG;
     else
-      registers[SR] &= ~CY_FLAG;
+      cpu->registers[SR] &= ~CY_FLAG;
   }
 
   if (valueY == 0)
-    registers[SR] |= ZD_FLAG;
+    cpu->registers[SR] |= ZD_FLAG;
   else
-    registers[SR] &= ~ZD_FLAG;
+    cpu->registers[SR] &= ~ZD_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -769,43 +883,45 @@ void divv(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "div %s,%s,%s,%s",
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void srl(uint32_t registers[NUM_REGISTERS], FILE *output)
+void srl(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
-  const uint8_t l = registers[IR] & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
+  const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueZ = (uint64_t)registers[z];
-  const uint64_t valueY = (uint64_t)registers[y];
+  const uint64_t valueZ = (uint64_t)cpu->registers[z];
+  const uint64_t valueY = (uint64_t)cpu->registers[y];
 
   const uint64_t result = z != 0 ? ((valueZ << 32) | valueY) >> (l + 1) : valueY >> (l + 1);
 
   if (x != 0)
-    registers[x] = result & 0xFFFFFFFF;
+    cpu->registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
   {
-    registers[z] = (result >> 32) & 0xFFFFFFFF;
+    cpu->registers[z] = (result >> 32) & 0xFFFFFFFF;
 
-    if (registers[z] != 0)
-      registers[SR] |= OV_FLAG;
+    if (cpu->registers[z] != 0)
+      cpu->registers[SR] |= OV_FLAG;
     else
-      registers[SR] &= ~OV_FLAG;
+      cpu->registers[SR] &= ~OV_FLAG;
   }
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -813,47 +929,49 @@ void srl(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "srl %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
-  sprintf(additionalInfo, "%s:%s=%s:%s>>%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, registers[z], registers[x], registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s:%s>>%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, cpu->registers[z], cpu->registers[x], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void divs(uint32_t registers[NUM_REGISTERS], FILE *output)
+void divs(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
-  const uint8_t l = registers[IR] & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
+  const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const int32_t valueX = registers[x];
-  const int32_t valueY = registers[y];
+  const int32_t valueX = cpu->registers[x];
+  const int32_t valueY = cpu->registers[y];
 
   if (valueY != 0)
   {
     if (l != 0)
-      registers[l] = valueX % valueY;
+      cpu->registers[l] = valueX % valueY;
 
     if (z != 0)
-      registers[z] = valueX / valueY;
+      cpu->registers[z] = valueX / valueY;
 
-    if (registers[z] == 0)
-      registers[SR] |= ZN_FLAG;
+    if (cpu->registers[z] == 0)
+      cpu->registers[SR] |= ZN_FLAG;
     else
-      registers[SR] &= ~ZN_FLAG;
+      cpu->registers[SR] &= ~ZN_FLAG;
 
-    if (registers[l] != 0)
-      registers[SR] |= OV_FLAG;
+    if (cpu->registers[l] != 0)
+      cpu->registers[SR] |= OV_FLAG;
     else
-      registers[SR] &= ~OV_FLAG;
+      cpu->registers[SR] &= ~OV_FLAG;
   }
 
   if (valueY == 0)
-    registers[SR] |= ZD_FLAG;
+    cpu->registers[SR] |= ZD_FLAG;
   else
-    registers[SR] &= ~ZD_FLAG;
+    cpu->registers[SR] &= ~ZD_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -861,41 +979,43 @@ void divs(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "divs %s,%s,%s,%s",
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
+void sra(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
-  const uint8_t l = registers[IR] & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
+  const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const int64_t valueZ = extendSign64(registers[z], 32);
-  const int64_t valueY = extendSign64(registers[y], 32);
+  const int64_t valueZ = cpu->registers[z];
+  const int64_t valueY = cpu->registers[y];
 
   const int64_t result = ((valueZ << 32) | valueY) >> (l + 1);
 
   if (x != 0)
-    registers[x] = result & 0xFFFFFFFF;
+    cpu->registers[x] = result & 0xFFFFFFFF;
 
   if (z != 0)
-    registers[z] = (result >> 32) & 0xFFFFFFFF;
+    cpu->registers[z] = (result >> 32) & 0xFFFFFFFF;
 
-  if (registers[z] != 0)
-    registers[SR] |= OV_FLAG;
+  if (cpu->registers[z] != 0)
+    cpu->registers[SR] |= OV_FLAG;
   else
-    registers[SR] &= ~OV_FLAG;
+    cpu->registers[SR] &= ~OV_FLAG;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -903,242 +1023,254 @@ void sra(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "sra %s,%s,%s,%u",
           formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true), l);
-  sprintf(additionalInfo, "%s:%s=%s:%s>>%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, registers[z], registers[x], registers[SR]);
+  sprintf(additionalInfo, "%s:%s=%s:%s>>%u=0x%08X%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(z, false), formatRegisterName(y, false), l + 1, cpu->registers[z], cpu->registers[x], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void cmp(uint32_t registers[NUM_REGISTERS], FILE *output)
+void cmp(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
 
   // Execution of behavior
-  const uint64_t valueX = (uint64_t)registers[x];
-  const uint64_t valueY = (uint64_t)registers[y];
+  const uint64_t valueX = (uint64_t)cpu->registers[x];
+  const uint64_t valueY = (uint64_t)cpu->registers[y];
 
   const uint64_t result = valueX - valueY;
 
   if (z != 0)
-    registers[z] = (result & 0xFFFFFFFF);
+    cpu->registers[z] = (result & 0xFFFFFFFF);
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   if ((result & 0x80000000))
-    registers[SR] |= SN_FLAG;
+    cpu->registers[SR] |= SN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   if (
       ((valueX & 0x80000000) != (valueY & 0x80000000)) &&
       ((result & 0x80000000) != (valueX & 0x80000000)))
-    registers[SR] |= OV_FLAG;
+    cpu->registers[SR] |= OV_FLAG;
   else
-    registers[SR] &= ~OV_FLAG;
+    cpu->registers[SR] &= ~OV_FLAG;
 
   if (result > 0xFFFFFFFF)
-    registers[SR] |= CY_FLAG;
+    cpu->registers[SR] |= CY_FLAG;
   else
-    registers[SR] &= ~CY_FLAG;
+    cpu->registers[SR] &= ~CY_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "cmp %s,%s", formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "SR=0x%08X", registers[SR]);
+  sprintf(additionalInfo, "SR=0x%08X", cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void and (uint32_t registers[NUM_REGISTERS], FILE *output)
+void and (CPU * cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
 
   // Execution of behavior
-  const uint32_t valueX = (uint32_t)registers[x];
-  const uint32_t valueY = (uint32_t)registers[y];
+  const uint32_t valueX = (uint32_t)cpu->registers[x];
+  const uint32_t valueY = (uint32_t)cpu->registers[y];
 
   const uint32_t result = valueX & valueY;
 
   if (z != 0)
-    registers[z] = result;
+    cpu->registers[z] = result;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   if (result & 0x80000000)
-    registers[SR] |= SN_FLAG;
+    cpu->registers[SR] |= SN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "and %s,%s,%s", formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s&%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s&%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void or (uint32_t registers[NUM_REGISTERS], FILE *output)
+void or (CPU * cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
 
   // Execution of behavior
-  const uint32_t valueX = (uint32_t)registers[x];
-  const uint32_t valueY = (uint32_t)registers[y];
+  const uint32_t valueX = (uint32_t)cpu->registers[x];
+  const uint32_t valueY = (uint32_t)cpu->registers[y];
 
   const uint32_t result = valueX | valueY;
 
   if (z != 0)
-    registers[z] = result;
+    cpu->registers[z] = result;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   if (result & 0x80000000)
-    registers[SR] |= SN_FLAG;
+    cpu->registers[SR] |= SN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "or %s,%s,%s", formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s|%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s|%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void not(uint32_t registers[NUM_REGISTERS], FILE *output)
+void not(CPU * cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
 
   // Execution of behavior
-  const uint32_t valueX = (uint32_t)registers[x];
+  const uint32_t valueX = (uint32_t)cpu->registers[x];
 
   const uint32_t result = ~valueX;
 
   if (z != 0)
-    registers[z] = result;
+    cpu->registers[z] = result;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   if (result & 0x80000000)
-    registers[SR] |= SN_FLAG;
+    cpu->registers[SR] |= SN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "not %s,%s", formatRegisterName(z, true), formatRegisterName(x, true));
-  sprintf(additionalInfo, "%s=~%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=~%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
+void xor (CPU * cpu, FILE *output) {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint8_t y = (registers[IR] >> 11) & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint8_t y = (ir >> 11) & 0x1F;
 
   // Execution of behavior
-  const uint32_t valueX = (uint32_t)registers[x];
-  const uint32_t valueY = (uint32_t)registers[y];
+  const uint32_t valueX = (uint32_t)cpu->registers[x];
+  const uint32_t valueY = (uint32_t)cpu->registers[y];
 
   const uint32_t result = valueX ^ valueY;
 
   if (z != 0)
-    registers[z] = result;
+    cpu->registers[z] = result;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   if (result & 0x80000000)
-    registers[SR] |= SN_FLAG;
+    cpu->registers[SR] |= SN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "xor %s,%s,%s", formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s^%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s^%s=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-    void addi(uint32_t registers[NUM_REGISTERS], FILE *output)
+    void addi(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const int32_t i = extendSign32(ir & 0xFFFF, 16);
 
   // Execution of behavior
-  const uint64_t valueX = (uint64_t)registers[x];
+  const uint64_t valueX = (uint64_t)cpu->registers[x];
 
   const uint64_t result = valueX + (uint64_t)i;
 
   if (z != 0)
-    registers[z] = (uint32_t)result;
+    cpu->registers[z] = (uint32_t)result;
 
-  if (registers[z] == 0)
-    registers[SR] |= ZN_FLAG;
+  if (cpu->registers[z] == 0)
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   if ((result & 0x80000000))
-    registers[SR] |= SN_FLAG;
+    cpu->registers[SR] |= SN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   if (
       ((valueX & 0x80000000) == (i & 0x80000000)) &&
       ((result & 0x80000000) != (valueX & 0x80000000)))
-    registers[SR] |= OV_FLAG;
+    cpu->registers[SR] |= OV_FLAG;
   else
-    registers[SR] &= ~OV_FLAG;
+    cpu->registers[SR] &= ~OV_FLAG;
 
   if (result > 0xFFFFFFFF)
-    registers[SR] |= CY_FLAG;
+    cpu->registers[SR] |= CY_FLAG;
   else
-    registers[SR] &= ~CY_FLAG;
+    cpu->registers[SR] &= ~CY_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1146,48 +1278,50 @@ void xor (uint32_t registers[NUM_REGISTERS], FILE *output) {
 
   sprintf(instruction, "addi %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
-  sprintf(additionalInfo, "%s=%s+0x%08X=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s+0x%08X=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
+void subi(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const int32_t i = extendSign32(ir & 0xFFFF, 16);
 
   // Execution of behavior
-  const uint64_t valueX = (uint64_t)registers[x];
+  const uint64_t valueX = (uint64_t)cpu->registers[x];
 
   const uint64_t result = valueX - i;
 
   if (z != 0)
-    registers[z] = (result & 0xFFFFFFFF);
+    cpu->registers[z] = (result & 0xFFFFFFFF);
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   if ((result & 0x80000000))
-    registers[SR] |= SN_FLAG;
+    cpu->registers[SR] |= SN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   if (
       ((valueX & 0x80000000) != (i & 0x80000000)) &&
       ((result & 0x80000000) != (valueX & 0x80000000)))
-    registers[SR] |= OV_FLAG;
+    cpu->registers[SR] |= OV_FLAG;
   else
-    registers[SR] &= ~OV_FLAG;
+    cpu->registers[SR] &= ~OV_FLAG;
 
   if (result > 0xFFFFFFFF)
-    registers[SR] |= CY_FLAG;
+    cpu->registers[SR] |= CY_FLAG;
   else
-    registers[SR] &= ~CY_FLAG;
+    cpu->registers[SR] &= ~CY_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1195,35 +1329,37 @@ void subi(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "subi %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
-  sprintf(additionalInfo, "%s=%s-0x%08X=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s-0x%08X=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
+void muli(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const int32_t i = extendSign32(ir & 0xFFFF, 16);
 
   // Execution of behavior
-  const int64_t valueX = extendSign64(registers[x], 32);
+  const int64_t valueX = extendSign64(cpu->registers[x], 32);
   const int64_t result = valueX * i;
 
   if (z != 0)
-    registers[z] = (uint32_t)result;
+    cpu->registers[z] = (uint32_t)result;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG;
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   if ((result & 0xFFFFFFFF00000000) != 0)
-    registers[SR] |= OV_FLAG;
+    cpu->registers[SR] |= OV_FLAG;
   else
-    registers[SR] &= ~OV_FLAG;
+    cpu->registers[SR] &= ~OV_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1231,42 +1367,41 @@ void muli(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "muli %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
-  sprintf(additionalInfo, "%s=%s*0x%08X=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s*0x%08X=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, cpu->registers[z], cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void divi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptionCode)
+void divi(System *system, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const int32_t i = extendSign32(ir & 0xFFFF, 16);
 
   // Execution of behavior
-  const int32_t valueX = registers[x];
+  const int32_t valueX = system->cpu.registers[x];
 
   if (i != 0)
   {
     if (z != 0)
-      registers[z] = valueX / i;
+      system->cpu.registers[z] = valueX / i;
 
-    if (registers[z] == 0)
-      registers[SR] |= ZN_FLAG;
+    if (system->cpu.registers[z] == 0)
+      system->cpu.registers[SR] |= ZN_FLAG;
     else
-      registers[SR] &= ~ZN_FLAG;
+      system->cpu.registers[SR] &= ~ZN_FLAG;
   }
 
   if (i == 0)
-  {
-    registers[SR] |= ZD_FLAG;
-    (*interruptionCode) = DIVIDE_BY_ZERO_ADDR;
-  }
+    system->cpu.registers[SR] |= ZD_FLAG;
   else
-    registers[SR] &= ~ZD_FLAG;
+    system->cpu.registers[SR] &= ~ZD_FLAG;
 
-  registers[SR] &= ~OV_FLAG; // OV
+  system->cpu.registers[SR] &= ~OV_FLAG; // OV
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1275,39 +1410,41 @@ void divi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptio
   sprintf(instruction, "divi %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
   sprintf(additionalInfo, "%s=%s/0x%08X=0x%08X,SR=0x%08X",
-          formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
+          formatRegisterName(z, false), formatRegisterName(x, false), i, system->cpu.registers[z], system->cpu.registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
-}
-
-void modi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptionCode)
-{
-  // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
-
-  // Execution of behavior
-  const int32_t valueX = registers[x];
-
-  if (z != 0)
-    registers[z] = valueX % i;
-
-  if (registers[z] == 0)
-    registers[SR] |= ZN_FLAG;
-  else
-    registers[SR] &= ~ZN_FLAG;
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
 
   if (i == 0)
-  {
-    registers[SR] |= ZD_FLAG;
-    (*interruptionCode) = DIVIDE_BY_ZERO_ADDR;
-  }
-  else
-    registers[SR] &= ~ZD_FLAG;
+    handleDivideByZero(system, output);
+}
 
-  registers[SR] &= ~OV_FLAG;
+void modi(System *system, FILE *output)
+{
+  // Fetch operands
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const int32_t i = extendSign32(ir & 0xFFFF, 16);
+
+  // Execution of behavior
+  const int32_t valueX = system->cpu.registers[x];
+
+  if (z != 0)
+    system->cpu.registers[z] = valueX % i;
+
+  if (system->cpu.registers[z] == 0)
+    system->cpu.registers[SR] |= ZN_FLAG;
+  else
+    system->cpu.registers[SR] &= ~ZN_FLAG;
+
+  if (i == 0)
+    system->cpu.registers[SR] |= ZD_FLAG;
+  else
+    system->cpu.registers[SR] &= ~ZD_FLAG;
+
+  system->cpu.registers[SR] &= ~OV_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1315,69 +1452,74 @@ void modi(uint32_t registers[NUM_REGISTERS], FILE *output, uint32_t *interruptio
 
   sprintf(instruction, "modi %s,%s,%i",
           formatRegisterName(z, true), formatRegisterName(x, true), i);
-  sprintf(additionalInfo, "%s=%s%%0x%08X=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, registers[z], registers[SR]);
+  sprintf(additionalInfo, "%s=%s%%0x%08X=0x%08X,SR=0x%08X", formatRegisterName(z, false), formatRegisterName(x, false), i, system->cpu.registers[z], system->cpu.registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
+
+  if (i == 0)
+    handleDivideByZero(system, output);
 }
 
-void cmpi(uint32_t registers[NUM_REGISTERS], FILE *output)
+void cmpi(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int64_t i = extendSign64(registers[IR] & 0xFFFF, 16);
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const int64_t i = extendSign64(ir & 0xFFFF, 16);
 
   // Execution of behavior
-  const uint64_t valueX = (uint64_t)registers[x];
+  const uint64_t valueX = (uint64_t)cpu->registers[x];
   const uint64_t result = valueX - (uint64_t)i;
 
   if (result == 0)
-    registers[SR] |= ZN_FLAG; // error
+    cpu->registers[SR] |= ZN_FLAG;
   else
-    registers[SR] &= ~ZN_FLAG;
+    cpu->registers[SR] &= ~ZN_FLAG;
 
   if ((result & 0x80000000))
-    registers[SR] |= SN_FLAG; // error
+    cpu->registers[SR] |= SN_FLAG;
   else
-    registers[SR] &= ~SN_FLAG;
+    cpu->registers[SR] &= ~SN_FLAG;
 
   if ((valueX & 0x80000000) != (i & 0x80000000) &&
       ((result & 0x80000000) != (valueX & 0x80000000)))
-    registers[SR] |= OV_FLAG;
+    cpu->registers[SR] |= OV_FLAG;
   else
-    registers[SR] &= ~OV_FLAG;
+    cpu->registers[SR] &= ~OV_FLAG;
 
   if (result > 0xFFFFFFFF)
-    registers[SR] |= CY_FLAG;
+    cpu->registers[SR] |= CY_FLAG;
   else
-    registers[SR] &= ~CY_FLAG;
+    cpu->registers[SR] &= ~CY_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[50] = {0};
 
   sprintf(instruction, "cmpi %s,%ld", formatRegisterName(x, true), i);
-  sprintf(additionalInfo, "SR=0x%08X", registers[SR]);
+  sprintf(additionalInfo, "SR=0x%08X", cpu->registers[SR]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
 /******************************************************
  * Flow Control Operations
  *******************************************************/
 
-void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bae(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (!isCYSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (!isCYSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1385,23 +1527,23 @@ void bae(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bae %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", isCYSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isCYSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bat(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (!isZNSet(registers) && !isCYSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (!isZNSet(&system->cpu) && !isCYSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1409,23 +1551,23 @@ void bat(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bat %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", isZNSet(registers) || isCYSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isZNSet(&system->cpu) || isCYSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bbe(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (isZNSet(registers) || isCYSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (isZNSet(&system->cpu) || isCYSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1433,23 +1575,23 @@ void bbe(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bbe %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(registers) && !isCYSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(&system->cpu) && !isCYSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bbt(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (isCYSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (isCYSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1457,23 +1599,23 @@ void bbt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bbt %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", !isCYSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isCYSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void beq(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (isZNSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (isZNSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1481,23 +1623,23 @@ void beq(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "beq %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bge(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (isSNSet(registers) == isOVSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (isSNSet(&system->cpu) == isOVSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1506,23 +1648,23 @@ void bge(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
 
   sprintf(instruction, "bge %i", i);
   sprintf(additionalInfo, "PC=0x%08X",
-          isSNSet(registers) != isOVSet(registers) ? registers[PC] + 4 : registers[PC]);
+          isSNSet(&system->cpu) != isOVSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bgt(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (!isZNSet(registers) && (isSNSet(registers) == isOVSet(registers)))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (!isZNSet(&system->cpu) && (isSNSet(&system->cpu) == isOVSet(&system->cpu)))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1530,23 +1672,23 @@ void bgt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bgt %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", isZNSet(registers) || (isSNSet(registers) != isOVSet(registers)) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isZNSet(&system->cpu) || (isSNSet(&system->cpu) != isOVSet(&system->cpu)) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void biv(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (isIVSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (isIVSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1554,23 +1696,23 @@ void biv(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "biv %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", !isIVSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isIVSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void ble(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (isZNSet(registers) || (isSNSet(registers) != isOVSet(registers)))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (isZNSet(&system->cpu) || (isSNSet(&system->cpu) != isOVSet(&system->cpu)))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1578,23 +1720,23 @@ void ble(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "ble %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(registers) && (isSNSet(registers) == isOVSet(registers)) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isZNSet(&system->cpu) && (isSNSet(&system->cpu) == isOVSet(&system->cpu)) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void blt(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (isSNSet(registers) != isOVSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (isSNSet(&system->cpu) != isOVSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1602,23 +1744,23 @@ void blt(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "blt %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", isSNSet(registers) == isOVSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isSNSet(&system->cpu) == isOVSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bne(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (!isZNSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (!isZNSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1626,23 +1768,23 @@ void bne(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bne %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", isZNSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isZNSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bni(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (!isIVSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (!isIVSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1650,23 +1792,23 @@ void bni(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bni %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", isIVSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isIVSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bnz(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (!isZDSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (!isZDSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1674,23 +1816,23 @@ void bnz(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bnz %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", isZDSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", isZDSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bzd(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  if (isZDSet(registers))
+  const uint32_t oldPC = system->cpu.registers[PC];
+  if (isZDSet(&system->cpu))
   {
-    *(pcAlreadyIncremented) = true;
-    registers[PC] = registers[PC] + 4 + (i << 2);
+    system->control.pcAlreadyIncremented = true;
+    system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
   }
 
   // Instruction formatting
@@ -1698,28 +1840,28 @@ void bzd(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bzd %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", !isZDSet(registers) ? registers[PC] + 4 : registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", !isZDSet(&system->cpu) ? system->cpu.registers[PC] + 4 : system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented)
+void bun(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  *(pcAlreadyIncremented) = true;
-  const uint32_t oldPC = registers[PC];
-  registers[PC] = registers[PC] + 4 + (i << 2);
+  system->control.pcAlreadyIncremented = true;
+  const uint32_t oldPC = system->cpu.registers[PC];
+  system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[30] = {0};
 
   sprintf(instruction, "bun %i", i);
-  sprintf(additionalInfo, "PC=0x%08X", registers[PC]);
+  sprintf(additionalInfo, "PC=0x%08X", system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
@@ -1729,119 +1871,126 @@ void bun(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncreme
  * Memory read/write operations
  *******************************************************/
 
-void l8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void l8(System *system, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint16_t i = registers[IR] & 0xFFFF;
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint16_t i = ir & 0xFFFF;
 
   // Execution of behavior
-  const uint32_t memoryAddress = (x != 0) ? registers[x] + i : i;
+  const uint32_t memoryAddress = (x != 0) ? system->cpu.registers[x] + i : i;
 
-  if (z != 0)
-    registers[z] = mem8[memoryAddress];
+  if (z != 0 && memoryAddress < (NUM_REGISTERS * 1024))
+    system->cpu.registers[z] = system->memory[memoryAddress];
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "l8 %s,[%s%s%i]", formatRegisterName(z, true), formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
-  sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%02X", formatRegisterName(z, false), memoryAddress, registers[z]);
+  sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%02X", formatRegisterName(z, false), memoryAddress, system->cpu.registers[z]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
 }
 
-void l16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void l16(System *system, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint16_t i = registers[IR] & 0xFFFF;
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint16_t i = ir & 0xFFFF;
 
   // Execution of behavior
-  const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 1) : i << 1;
+  const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 1) : i << 1;
 
-  if (z != 0)
-    registers[z] = ((mem8[memoryAddress] << 24) |
-                    (mem8[memoryAddress + 1] << 16));
+  if (z != 0 && memoryAddress < (NUM_REGISTERS * 1024))
+    system->cpu.registers[z] = ((system->memory[memoryAddress] << 24) |
+                                (system->memory[memoryAddress + 1] << 16));
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "l16 %s,[%s%s%i]", formatRegisterName(z, true), formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
-  sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%04X", formatRegisterName(z, false), memoryAddress, registers[z] >> 16);
+  sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%04X", formatRegisterName(z, false), memoryAddress, system->cpu.registers[z] >> 16);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
 }
 
-void l32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void l32(System *system, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint16_t i = registers[IR] & 0xFFFF;
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint16_t i = ir & 0xFFFF;
 
   // Execution of behavior
-  const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 2) : i << 2;
+  const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 2) : i << 2;
 
-  if (z != 0)
-    registers[z] = ((mem8[memoryAddress] << 24) |
-                    (mem8[memoryAddress + 1] << 16) |
-                    (mem8[memoryAddress + 2] << 8) |
-                    (mem8[memoryAddress + 3] << 0));
+  if (z != 0 && memoryAddress < (NUM_REGISTERS * 1024))
+    system->cpu.registers[z] = readMemory32(system, memoryAddress);
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "l32 %s,[%s%s%i]", formatRegisterName(z, true), formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
-  sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%08X", formatRegisterName(z, false), memoryAddress, registers[z]);
+  sprintf(additionalInfo, "%s=MEM[0x%08X]=0x%08X", formatRegisterName(z, false), memoryAddress, system->cpu.registers[z]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
 }
 
-void s8(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void s8(System *system, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint16_t i = registers[IR] & 0xFFFF;
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint16_t i = ir & 0xFFFF;
 
   // Execution of behavior
-  const uint32_t memoryAddress = (x != 0) ? registers[x] + i : i;
+  const uint32_t memoryAddress = (x != 0) ? system->cpu.registers[x] + i : i;
 
   if (memoryAddress < (NUM_REGISTERS * 1024))
-    mem8[memoryAddress] = registers[z];
+    system->memory[memoryAddress] = system->cpu.registers[z];
 
   // Instruction formatting
   char instruction[50] = {0};
   char additionalInfo[200] = {0};
 
   sprintf(instruction, "s8 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
-  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%02X", memoryAddress, formatRegisterName(z, false), registers[z]);
+  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%02X", memoryAddress, formatRegisterName(z, false), system->cpu.registers[z]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
 }
 
-void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void s16(System *system, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint16_t i = registers[IR] & 0xFFFF;
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint16_t i = ir & 0xFFFF;
 
   // Execution of behavior
-  const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 1) : i << 1;
+  const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 1) : i << 1;
   if (memoryAddress < (NUM_REGISTERS * 1024))
   {
-    mem8[memoryAddress] = (registers[z] >> 24) & 0xFF;
-    mem8[memoryAddress + 1] = (registers[z] >> 16) & 0xFF;
+    system->memory[memoryAddress] = (system->cpu.registers[z] >> 24) & 0xFF;
+    system->memory[memoryAddress + 1] = (system->cpu.registers[z] >> 16) & 0xFF;
   }
 
   // Instruction formatting
@@ -1849,27 +1998,34 @@ void s16(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "s16 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
-  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%04X", memoryAddress, formatRegisterName(z, false), registers[z] >> 16);
+  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%04X", memoryAddress, formatRegisterName(z, false), system->cpu.registers[z] >> 16);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
 }
 
-void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void s32(System *system, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const uint16_t i = registers[IR] & 0xFFFF;
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const uint16_t i = ir & 0xFFFF;
 
   // Execution of behavior
-  const uint32_t memoryAddress = (x != 0) ? ((registers[x] + i) << 2) : i << 2;
-  if (memoryAddress < (NUM_REGISTERS * 1024))
+  const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 2) : i << 2;
+  if (memoryAddress == WATCHDOG_ADDR)
+    system->watchdog.registers = system->cpu.registers[z];
+  else
   {
-    mem8[memoryAddress + 0] = (registers[z] >> 24) & 0xFF;
-    mem8[memoryAddress + 1] = (registers[z] >> 16) & 0xFF;
-    mem8[memoryAddress + 2] = (registers[z] >> 8) & 0xFF;
-    mem8[memoryAddress + 3] = (registers[z]) & 0xFF;
+    if (memoryAddress < (NUM_REGISTERS * 1024))
+    {
+      system->memory[memoryAddress + 0] = (system->cpu.registers[z] >> 24) & 0xFF;
+      system->memory[memoryAddress + 1] = (system->cpu.registers[z] >> 16) & 0xFF;
+      system->memory[memoryAddress + 2] = (system->cpu.registers[z] >> 8) & 0xFF;
+      system->memory[memoryAddress + 3] = (system->cpu.registers[z]) & 0xFF;
+    }
   }
 
   // Instruction formatting
@@ -1877,34 +2033,36 @@ void s32(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "s32 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
-  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%08X", memoryAddress, formatRegisterName(z, false), registers[z]);
+  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%08X", memoryAddress, formatRegisterName(z, false), system->cpu.registers[z]);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
 }
 
 /******************************************************
  * Subroutine call operation
  *******************************************************/
 
-void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
+void callf(System *system, FILE *output)
 {
   // Fetch operands
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
-  const int32_t i = extendSign32(registers[IR] & 0xFFFF, 16);
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint8_t x = (ir >> 16) & 0x1F;
+  const int32_t i = extendSign32(ir & 0xFFFF, 16);
 
   // Execution of behavior
-  *(pcAlreadyIncremented) = true; // Prevent it from being incremented
-  const uint32_t oldPC = registers[PC];
-  const uint32_t oldSP = registers[SP];
+  system->control.pcAlreadyIncremented = true; // Prevent it from being incremented
+  const uint32_t oldPC = system->cpu.registers[PC];
+  const uint32_t oldSP = system->cpu.registers[SP];
 
-  mem8[registers[SP]] = ((registers[PC] + 4) >> 24) & 0xFF;
-  mem8[registers[SP] + 1] = ((registers[PC] + 4) >> 16) & 0xFF;
-  mem8[registers[SP] + 2] = ((registers[PC] + 4) >> 8) & 0xFF;
-  mem8[registers[SP] + 3] = ((registers[PC] + 4) >> 0) & 0xFF;
+  system->memory[system->cpu.registers[SP]] = ((system->cpu.registers[PC] + 4) >> 24) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 1] = ((system->cpu.registers[PC] + 4) >> 16) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 2] = ((system->cpu.registers[PC] + 4) >> 8) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 3] = ((system->cpu.registers[PC] + 4) >> 0) & 0xFF;
 
-  registers[PC] = (registers[x] + i) << 2;
-  registers[SP] -= 4;
+  system->cpu.registers[PC] = (system->cpu.registers[x] + i) << 2;
+  system->cpu.registers[SP] -= 4;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1912,78 +2070,77 @@ void callf(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool 
 
   sprintf(instruction, "call [%s%s%i]",
           formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i);
-  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", registers[PC], oldSP, oldPC + 4);
+  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", system->cpu.registers[PC], oldSP, oldPC + 4);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void calls(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
+void calls(System *system, FILE *output)
 {
   // Fetch operands
-  const int32_t i = extendSign32(registers[IR] & 0x03FFFFFF, 26);
+  const int32_t i = extendSign32(system->cpu.registers[IR] & 0x03FFFFFF, 26);
 
   // Execution of behavior
-  *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
+  system->control.pcAlreadyIncremented = true; // Prevent it from being incremented twice
 
-  const uint32_t oldPC = registers[PC];
-  const uint32_t oldSP = registers[SP];
+  const uint32_t oldPC = system->cpu.registers[PC];
+  const uint32_t oldSP = system->cpu.registers[SP];
 
-  mem8[registers[SP]] = ((registers[PC] + 4) >> 24) & 0xFF;
-  mem8[registers[SP] + 1] = ((registers[PC] + 4) >> 16) & 0xFF;
-  mem8[registers[SP] + 2] = ((registers[PC] + 4) >> 8) & 0xFF;
-  mem8[registers[SP] + 3] = ((registers[PC] + 4) >> 0) & 0xFF;
+  system->memory[system->cpu.registers[SP]] = ((system->cpu.registers[PC] + 4) >> 24) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 1] = ((system->cpu.registers[PC] + 4) >> 16) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 2] = ((system->cpu.registers[PC] + 4) >> 8) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 3] = ((system->cpu.registers[PC] + 4) >> 0) & 0xFF;
 
-  registers[PC] = registers[PC] + 4 + (i << 2);
-  registers[SP] -= 4;
+  system->cpu.registers[PC] = system->cpu.registers[PC] + 4 + (i << 2);
+  system->cpu.registers[SP] -= 4;
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[100] = {0};
 
   sprintf(instruction, "call %i", i);
-  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", registers[PC], oldSP, oldPC + 4);
+  sprintf(additionalInfo, "PC=0x%08X,MEM[0x%08X]=0x%08X", system->cpu.registers[PC], oldSP, oldPC + 4);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void ret(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
+void ret(System *system, FILE *output)
 {
   // Execution of behavior
-  *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
+  system->control.pcAlreadyIncremented = true; // Prevent it from being incremented twice
 
-  const uint32_t oldPC = registers[PC];
-  registers[SP] += 4;
-  registers[PC] = ((mem8[registers[SP]] << 24) |
-                   (mem8[registers[SP] + 1] << 16) |
-                   (mem8[registers[SP] + 2] << 8) |
-                   (mem8[registers[SP] + 3] << 0));
+  const uint32_t oldPC = system->cpu.registers[PC];
+  system->cpu.registers[SP] += 4;
+  system->cpu.registers[PC] = readMemory32(system, system->cpu.registers[SP]);
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[42] = {0};
 
   sprintf(instruction, "ret");
-  sprintf(additionalInfo, "PC=MEM[0x%08X]=0x%08X", registers[SP], registers[PC]);
+  sprintf(additionalInfo, "PC=MEM[0x%08X]=0x%08X", system->cpu.registers[SP], system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void push(System *system, FILE *output)
 {
   // Fetch operands
-  const uint32_t v = (registers[IR] >> 6) & 0x1F;
-  const uint32_t w = registers[IR] & 0x1F;
-  const uint32_t x = (registers[IR] >> 16) & 0x1F;
-  const uint32_t y = (registers[IR] >> 11) & 0x1F;
-  const uint32_t z = (registers[IR] >> 21) & 0x1F;
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint32_t v = (ir >> 6) & 0x1F;
+  const uint32_t w = ir & 0x1F;
+  const uint32_t x = (ir >> 16) & 0x1F;
+  const uint32_t y = (ir >> 11) & 0x1F;
+  const uint32_t z = (ir >> 21) & 0x1F;
 
   const uint32_t operands[] = {v, w, x, y, z};
 
   // Execution of behavior
-  const uint32_t oldSP = registers[SP];
+  const uint32_t oldSP = system->cpu.registers[SP];
 
   for (uint8_t i = 0; i < 5; i++)
   {
@@ -1991,12 +2148,12 @@ void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
     if (operand == 0)
       break;
 
-    mem8[registers[SP] + 0] = (registers[operand] >> 24) & 0xFF;
-    mem8[registers[SP] + 1] = (registers[operand] >> 16) & 0xFF;
-    mem8[registers[SP] + 2] = (registers[operand] >> 8) & 0xFF;
-    mem8[registers[SP] + 3] = (registers[operand]) & 0xFF;
+    system->memory[system->cpu.registers[SP] + 0] = (system->cpu.registers[operand] >> 24) & 0xFF;
+    system->memory[system->cpu.registers[SP] + 1] = (system->cpu.registers[operand] >> 16) & 0xFF;
+    system->memory[system->cpu.registers[SP] + 2] = (system->cpu.registers[operand] >> 8) & 0xFF;
+    system->memory[system->cpu.registers[SP] + 3] = (system->cpu.registers[operand]) & 0xFF;
 
-    registers[SP] -= 4;
+    system->cpu.registers[SP] -= 4;
   }
 
   // Instruction formatting
@@ -2022,7 +2179,7 @@ void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
     // Register Values
     tempValues += sprintf(registerValues + tempValues, "%s0x%08X",
-                          (i > 0) ? (",") : (""), registers[operand]);
+                          (i > 0) ? (",") : (""), system->cpu.registers[operand]);
 
     // Register Labels
     tempLabels += sprintf(registerLabels + tempLabels, "%s%s",
@@ -2032,33 +2189,32 @@ void push(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   sprintf(additionalInfo, "MEM[0x%08X]{%s}={%s}", oldSP, registerValues, registerLabels);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
 }
 
-void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
+void pop(System *system, FILE *output)
 {
   // Fetch operands
-  const uint32_t v = (registers[IR] >> 6) & 0x1F;
-  const uint32_t w = registers[IR] & 0x1F;
-  const uint32_t x = (registers[IR] >> 16) & 0x1F;
-  const uint32_t y = (registers[IR] >> 11) & 0x1F;
-  const uint32_t z = (registers[IR] >> 21) & 0x1F;
+  const uint32_t ir = system->cpu.registers[IR];
+
+  const uint32_t v = (ir >> 6) & 0x1F;
+  const uint32_t w = ir & 0x1F;
+  const uint32_t x = (ir >> 16) & 0x1F;
+  const uint32_t y = (ir >> 11) & 0x1F;
+  const uint32_t z = (ir >> 21) & 0x1F;
 
   const uint32_t operands[] = {v, w, x, y, z};
 
   // Execution of behavior
-  const uint32_t oldSP = registers[SP];
+  const uint32_t oldSP = system->cpu.registers[SP];
   for (uint8_t i = 0; i < 5; i++)
   {
     const uint32_t operand = operands[i];
     if (operand == 0)
       break;
 
-    registers[SP] += 4;
-    registers[operand] = ((mem8[registers[SP] + 0] << 24) |
-                          (mem8[registers[SP] + 1] << 16) |
-                          (mem8[registers[SP] + 2] << 8) |
-                          (mem8[registers[SP] + 3] << 0));
+    system->cpu.registers[SP] += 4;
+    system->cpu.registers[operand] = readMemory32(system, system->cpu.registers[SP]);
   }
 
   // Instruction formatting
@@ -2084,7 +2240,7 @@ void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
 
     // Register Values
     tempValues += sprintf(registerValues + tempValues, "%s0x%08X",
-                          (i > 0) ? (",") : (""), registers[operand]);
+                          (i > 0) ? (",") : (""), system->cpu.registers[operand]);
 
     // Register Labels
     tempLabels += sprintf(registerLabels + tempLabels, "%s%s",
@@ -2094,48 +2250,51 @@ void pop(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output)
   sprintf(additionalInfo, "{%s}=MEM[0x%08X]{%s}", registerLabels, oldSP, registerValues);
 
   // Output
-  printInstruction(registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
 }
 
 /******************************************************
  * Iterruption
  *******************************************************/
 
-void reti(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, FILE *output, bool *pcAlreadyIncremented)
+void reti(System *system, FILE *output)
 {
   // Execution of behavior
-  *(pcAlreadyIncremented) = true; // Prevent it from being incremented twice
-  const uint32_t oldPC = registers[PC];
+  system->control.pcAlreadyIncremented = true; // Prevent it from being incremented twice
+  const uint32_t oldPC = system->cpu.registers[PC];
 
-  registers[SP] += 4;
-  registers[IPC] = readMemory32(mem8, registers[SP]);
+  system->cpu.registers[SP] += 4;
+  system->cpu.registers[IPC] = readMemory32(system, system->cpu.registers[SP]);
 
-  registers[SP] += 4;
-  registers[CR] = readMemory32(mem8, registers[SP]);
+  system->cpu.registers[SP] += 4;
+  system->cpu.registers[CR] = readMemory32(system, system->cpu.registers[SP]);
 
-  registers[SP] += 4;
-  registers[PC] = readMemory32(mem8, registers[SP]);
+  system->cpu.registers[SP] += 4;
+  system->cpu.registers[PC] = readMemory32(system, system->cpu.registers[SP]);
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[300] = {0};
 
   sprintf(instruction, "reti");
-  sprintf(additionalInfo, "IPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X", registers[SP] - 8, registers[IPC], registers[SP] - 4, registers[CR], registers[SP], registers[PC]);
+  sprintf(additionalInfo, "IPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X", system->cpu.registers[SP] - 8, system->cpu.registers[IPC], system->cpu.registers[SP] - 4, system->cpu.registers[CR], system->cpu.registers[SP], system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void cbr(uint32_t registers[NUM_REGISTERS], FILE *output)
+void cbr(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  registers[z] &= ~(0x00000001 << x);
+  const uint32_t oldPC = cpu->registers[PC];
+  if (z != 0)
+    cpu->registers[z] &= ~(0x00000001 << x);
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -2143,21 +2302,24 @@ void cbr(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "cbr %s[%i]",
           formatRegisterName(z, true), x);
-  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
+  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), cpu->registers[z]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void sbr(uint32_t registers[NUM_REGISTERS], FILE *output)
+void sbr(CPU *cpu, FILE *output)
 {
   // Fetch operands
-  const uint8_t z = (registers[IR] >> 21) & 0x1F;
-  const uint8_t x = (registers[IR] >> 16) & 0x1F;
+  const uint32_t ir = cpu->registers[IR];
+
+  const uint8_t z = (ir >> 21) & 0x1F;
+  const uint8_t x = (ir >> 16) & 0x1F;
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
-  registers[z] |= (0x00000001 << x);
+  const uint32_t oldPC = cpu->registers[PC];
+  if (z != 0)
+    cpu->registers[z] |= (0x00000001 << x);
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -2165,94 +2327,47 @@ void sbr(uint32_t registers[NUM_REGISTERS], FILE *output)
 
   sprintf(instruction, "sbr %s[%i]",
           formatRegisterName(z, true), x);
-  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), registers[z]);
+  sprintf(additionalInfo, "%s=0x%08X", formatRegisterName(z, false), cpu->registers[z]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
 }
 
-void interrupt(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, bool *run, FILE *output, uint32_t *interruptionCode)
+void interrupt(System *system, FILE *output)
 {
   // Fetch operands
-  const uint32_t i = registers[IR] & 0x3FFFFF;
+  const uint32_t i = system->cpu.registers[IR] & 0x3FFFFF;
 
   // Execution of behavior
-  const uint32_t oldPC = registers[PC];
+  const uint32_t oldPC = system->cpu.registers[PC];
   if (i == 0)
   {
-    (*run) = 0;
-    memset(registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
+    system->control.run = false;
+    memset(system->cpu.registers, 0, sizeof(uint32_t) * NUM_REGISTERS);
   }
   else
-  {
-    handprepareForISR(registers, mem8);
-
-    registers[CR] = i;
-    registers[IPC] = registers[PC];
-    registers[PC] = SOFTWARE_INTERRUPT_ADDR;
-    (*interruptionCode) = SOFTWARE_INTERRUPT_ADDR;
-  }
+    handleInterrupt(system, output);
 
   // Instruction formatting
   char instruction[30] = {0};
   char additionalInfo[300] = {0};
 
   sprintf(instruction, "int %i", i);
-  sprintf(additionalInfo, "CR=0x%08X,PC=0x%08X", registers[CR], registers[PC]);
+  sprintf(additionalInfo, "CR=0x%08X,PC=0x%08X", system->cpu.registers[CR], system->cpu.registers[PC]);
 
   // Output
   printInstruction(oldPC, output, instruction, additionalInfo);
+
+  if (i != 0)
+    printInterruptMessage(INIT_INTERRUPT_ADDR, output);
 }
 
-/******************************************************
- * Routines interrupt handling
- *******************************************************/
-
-void savePCPlus4ToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
+void unknownInstruction(System *system, FILE *output)
 {
-  mem8[registers[SP] + 0] = ((registers[PC] + 4) >> 24) & 0xFF;
-  mem8[registers[SP] + 1] = ((registers[PC] + 4) >> 16) & 0xFF;
-  mem8[registers[SP] + 2] = ((registers[PC] + 4) >> 8) & 0xFF;
-  mem8[registers[SP] + 3] = (registers[PC] + 4) & 0xFF;
-  registers[SP] -= 4;
-}
-
-void saveCRToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
-{
-  mem8[registers[SP] + 0] = (registers[CR] >> 24) & 0xFF;
-  mem8[registers[SP] + 1] = (registers[CR] >> 16) & 0xFF;
-  mem8[registers[SP] + 2] = (registers[CR] >> 8) & 0xFF;
-  mem8[registers[SP] + 3] = (registers[CR]) & 0xFF;
-  registers[SP] -= 4;
-}
-
-void saveIPCToStack(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
-{
-  mem8[registers[SP] + 0] = (registers[IPC] >> 24) & 0xFF;
-  mem8[registers[SP] + 1] = (registers[IPC] >> 16) & 0xFF;
-  mem8[registers[SP] + 2] = (registers[IPC] >> 8) & 0xFF;
-  mem8[registers[SP] + 3] = (registers[IPC]) & 0xFF;
-  registers[SP] -= 4;
-}
-
-void handprepareForISR(uint32_t registers[NUM_REGISTERS], uint8_t *mem8)
-{
-  savePCPlus4ToStack(registers, mem8);
-  saveCRToStack(registers, mem8);
-  saveIPCToStack(registers, mem8);
-}
-
-void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *pcAlreadyIncremented, uint32_t *interruptionCode)
-{
-
   // Execution of behavior
-  *(pcAlreadyIncremented) = true;
-  const uint32_t oldPC = registers[PC];
+  const uint32_t oldPC = system->cpu.registers[PC];
 
-  registers[SR] |= IV_FLAG;
-  registers[CR] = (registers[IR] >> 26) & 0x3F;
-  registers[IPC] = registers[PC];
-  registers[PC] = INVALID_INSTRUCTION_ADDR;
+  system->cpu.registers[SR] |= IV_FLAG;
 
   // Instruction formatting
   char instruction[100] = {0};
@@ -2262,46 +2377,111 @@ void unknownInstruction(uint32_t registers[NUM_REGISTERS], FILE *output, bool *p
   printf("%s", instruction);
   fprintf(output, "%s", instruction);
 
-  (*interruptionCode) = INVALID_INSTRUCTION_ADDR;
+  handleInvalidInstruction(system, output);
+}
+
+/******************************************************
+ * Routines interrupt handling
+ *******************************************************/
+
+void handlePrepareForISR(System *system)
+{
+  system->memory[system->cpu.registers[SP] + 0] = ((system->cpu.registers[PC] + 4) >> 24) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 1] = ((system->cpu.registers[PC] + 4) >> 16) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 2] = ((system->cpu.registers[PC] + 4) >> 8) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 3] = (system->cpu.registers[PC] + 4) & 0xFF;
+  system->cpu.registers[SP] -= 4;
+
+  system->memory[system->cpu.registers[SP] + 0] = (system->cpu.registers[CR] >> 24) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 1] = (system->cpu.registers[CR] >> 16) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 2] = (system->cpu.registers[CR] >> 8) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 3] = (system->cpu.registers[CR]) & 0xFF;
+  system->cpu.registers[SP] -= 4;
+
+  system->memory[system->cpu.registers[SP] + 0] = (system->cpu.registers[IPC] >> 24) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 1] = (system->cpu.registers[IPC] >> 16) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 2] = (system->cpu.registers[IPC] >> 8) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 3] = (system->cpu.registers[IPC]) & 0xFF;
+  system->cpu.registers[SP] -= 4;
+}
+
+void handleDivideByZero(System *system, FILE *output)
+{
+  system->control.pcAlreadyIncremented = true;
+  handlePrepareForISR(system);
+
+  system->cpu.registers[SR] |= ZD_FLAG;
+  if (isIESet(&system->cpu))
+  {
+    system->cpu.registers[SR] |= ZD_FLAG;
+    system->cpu.registers[CR] = 0;
+    system->cpu.registers[IPC] = system->cpu.registers[PC];
+    system->cpu.registers[PC] = DIVIDE_BY_ZERO_ADDR;
+  }
+
+  printInterruptMessage(DIVIDE_BY_ZERO_ADDR, output);
+}
+
+void handleInvalidInstruction(System *system, FILE *output)
+{
+  system->control.pcAlreadyIncremented = true;
+  handlePrepareForISR(system);
+
+  system->cpu.registers[CR] = (system->cpu.registers[IR] >> 26) & 0x3F;
+  system->cpu.registers[IPC] = system->cpu.registers[PC];
+  system->cpu.registers[PC] = INVALID_INSTRUCTION_ADDR;
+
+  printInterruptMessage(INVALID_INSTRUCTION_ADDR, output);
+}
+
+void handleInterrupt(System *system, FILE *output)
+{
+  handlePrepareForISR(system);
+
+  system->cpu.registers[CR] = system->cpu.registers[IR] & 0x3FFFFF;
+  system->cpu.registers[IPC] = system->cpu.registers[PC];
+  system->cpu.registers[PC] = SOFTWARE_INTERRUPT_ADDR;
+
+  system->control.pcAlreadyIncremented = true;
 }
 
 /******************************************************
  * Fetch from the status register(SR)
  *******************************************************/
 
-int isCYSet(uint32_t registers[NUM_REGISTERS])
+int isCYSet(CPU *cpu)
 {
-  return (registers[SR] & CY_FLAG) != 0;
+  return (cpu->registers[SR] & CY_FLAG) != 0;
 }
 
-int isIESet(uint32_t registers[NUM_REGISTERS])
+int isIESet(CPU *cpu)
 {
-  return (registers[SR] & IE_FLAG) != 0;
+  return (cpu->registers[SR] & IE_FLAG) != 0;
 }
 
-int isIVSet(uint32_t registers[NUM_REGISTERS])
+int isIVSet(CPU *cpu)
 {
-  return ((registers[SR] & IV_FLAG) >> 2) != 0;
+  return ((cpu->registers[SR] & IV_FLAG) >> 2) != 0;
 }
 
-int isOVSet(uint32_t registers[NUM_REGISTERS])
+int isOVSet(CPU *cpu)
 {
-  return ((registers[SR] & OV_FLAG) >> 3) != 0;
+  return ((cpu->registers[SR] & OV_FLAG) >> 3) != 0;
 }
 
-int isSNSet(uint32_t registers[NUM_REGISTERS])
+int isSNSet(CPU *cpu)
 {
-  return ((registers[SR] & SN_FLAG) >> 4) != 0;
+  return ((cpu->registers[SR] & SN_FLAG) >> 4) != 0;
 }
 
-int isZDSet(uint32_t registers[NUM_REGISTERS])
+int isZDSet(CPU *cpu)
 {
-  return ((registers[SR] & ZD_FLAG) >> 5) != 0;
+  return ((cpu->registers[SR] & ZD_FLAG) >> 5) != 0;
 }
 
-int isZNSet(uint32_t registers[NUM_REGISTERS])
+int isZNSet(CPU *cpu)
 {
-  return ((registers[SR] & ZN_FLAG) >> 6) != 0;
+  return ((cpu->registers[SR] & ZN_FLAG) >> 6) != 0;
 }
 
 /******************************************************
@@ -2327,6 +2507,42 @@ void printInstruction(uint32_t pc, FILE *output, char *instruction, char *additi
 
   // Output formatting to file
   fprintf(output, "0x%08X:\t%-25s\t%s\n", pc, instruction, additionalInfo);
+}
+
+void printInterruptMessage(uint32_t code, FILE *output)
+{
+  char message[300] = {0};
+
+  switch (code)
+  {
+  case INIT_INTERRUPT_ADDR:
+  case SOFTWARE_INTERRUPT_ADDR:
+    sprintf(message, "[SOFTWARE INTERRUPTION]");
+    break;
+  case INVALID_INSTRUCTION_ADDR:
+    sprintf(message, "[SOFTWARE INTERRUPTION]");
+    break;
+  case DIVIDE_BY_ZERO_ADDR:
+    sprintf(message, "[SOFTWARE INTERRUPTION]");
+    break;
+  case HARDWARE1_INTERRUPT_ADDR:
+    sprintf(message, "[HARDWARE INTERRUPTION 1]");
+    break;
+  case HARDWARE2_INTERRUPT_ADDR:
+    sprintf(message, "[HARDWARE INTERRUPTION 2]");
+    break;
+  case HARDWARE3_INTERRUPT_ADDR:
+    sprintf(message, "[HARDWARE INTERRUPTION 3]");
+    break;
+  case HARDWARE4_INTERRUPT_ADDR:
+    sprintf(message, "[HARDWARE INTERRUPTION 4]");
+    break;
+  default:
+    break;
+  }
+
+  printf("%s\n", message);
+  fprintf(output, "%s\n", message);
 }
 
 char *formatRegisterName(uint8_t registerNumber, bool lower)
@@ -2380,56 +2596,10 @@ char *formatRegisterName(uint8_t registerNumber, bool lower)
   return result;
 }
 
-void handleInterrupt(uint32_t registers[NUM_REGISTERS], uint8_t *mem8, uint32_t *interruptionCode, FILE *output)
+uint32_t readMemory32(System *system, uint32_t memoryAddress)
 {
-  char interruptMessage[100] = {0};
-
-  switch (*interruptionCode)
-  {
-  case INVALID_INSTRUCTION_ADDR:
-    sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
-    break;
-  case SOFTWARE_INTERRUPT_ADDR:
-    sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
-    break;
-  case DIVIDE_BY_ZERO_ADDR:
-    handprepareForISR(registers, mem8);
-
-    registers[SR] |= ZD_FLAG;
-    if (isIESet(registers))
-    {
-      registers[SR] |= ZD_FLAG;
-      registers[CR] = 0;
-      registers[IPC] = registers[PC];
-      registers[PC] = DIVIDE_BY_ZERO_ADDR;
-    }
-
-    sprintf(interruptMessage, "[SOFTWARE INTERRUPTION]");
-    break;
-  case HARDWARE1_INTERRUPT_ADDR:
-    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 1]");
-    break;
-  case HARDWARE2_INTERRUPT_ADDR:
-    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 2]");
-    break;
-  case HARDWARE3_INTERRUPT_ADDR:
-    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 3]");
-    break;
-  case HARDWARE4_INTERRUPT_ADDR:
-    sprintf(interruptMessage, "[HARDWARE INTERRUPTION 4]");
-    break;
-  default:
-    break;
-  }
-
-  printf("%s\n", interruptMessage);
-  fprintf(output, "%s\n%s", interruptMessage, "");
-}
-
-uint32_t readMemory32(uint8_t *mem8, uint32_t memoryAddress)
-{
-  return ((mem8[memoryAddress] << 24) |
-          (mem8[memoryAddress + 1] << 16) |
-          (mem8[memoryAddress + 2] << 8) |
-          (mem8[memoryAddress + 3] << 0));
+  return ((system->memory[memoryAddress] << 24) |
+          (system->memory[memoryAddress + 1] << 16) |
+          (system->memory[memoryAddress + 2] << 8) |
+          (system->memory[memoryAddress + 3] << 0));
 }
