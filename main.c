@@ -46,6 +46,23 @@
 // Interrupt codes
 #define HARDWARE1_INTERRUPT_CODE 0xE1AC04DA
 
+// FPU
+#define FPU_REGISTER_X 0
+#define FPU_REGISTER_Y 1
+#define FPU_REGISTER_Z 2
+#define FPU_REGISTER_CONTROL 3
+
+#define NO_OPERATION_FPU_CODE 0b00000
+#define ADDITION_FPU_CODE 0b00001
+#define SUBTRACTION_FPU_CODE 0b00010
+#define MULTIPLICATION_FPU_CODE 0b00011
+#define DIVISION_FPU_CODE 0b00100
+#define ASSIGN_X_FROM_Z_FPU_CODE 0b00101
+#define ASSIGN_Y_FROM_Z_FPU_CODE 0b00110
+#define CEILING_FPU_CODE 0b00111
+#define FLOOR_FPU_CODE 0b01000
+#define ROUND_FPU_CODE 0b01001
+
 /******************************************************
  * Types
  *******************************************************/
@@ -56,19 +73,17 @@ struct TCPU
 };
 typedef struct TCPU CPU;
 
-struct FPU
+struct TFPU
 {
+  uint32_t registers[4];
 };
+typedef struct TFPU FPU;
 
 struct TWatchdog
 {
   int32_t registers;
 };
 typedef struct TWatchdog Watchdog;
-
-struct DMA
-{
-};
 
 struct TInterrupt
 {
@@ -87,9 +102,8 @@ typedef struct TControl Control;
 struct TSystem
 {
   CPU cpu;
-  struct FPU fpu;
+  FPU fpu;
   Watchdog watchdog;
-  struct DMA dma;
   uint8_t *memory;
 
   Control control;
@@ -105,6 +119,17 @@ void loadMemoryFromFile(System *system, FILE *input); // Load memory vector from
 void decodeInstructions(System *system, FILE *output);
 
 void updateWatchdog(System *system, FILE *output);
+
+void decodeFPUCmd(FPU *fpu, uint8_t cmd);
+void addFPU(FPU *fpu);
+void subtractFPU(FPU *fpu);
+void multiplyFPU(FPU *fpu);
+void divideFPU(FPU *fpu);
+void assignXFromZFPU(FPU *fpu);
+void assignYFromZFPU(FPU *fpu);
+void ceilingZFPU(FPU *fpu);
+void floorZFPU(FPU *fpu);
+void roundZFPU(FPU *fpu);
 
 void mov(CPU *cpu, FILE *output);
 void movs(CPU *cpu, FILE *output);
@@ -218,6 +243,9 @@ void initializeSystem(System *system, FILE *input, FILE *output)
 
   // watchdog
   system->watchdog.registers = 0;
+
+  // 4 fpu registers initialized to zero
+  memset(system->fpu.registers, 0, sizeof(system->fpu.registers));
 
   // 32 KiB memory initialized to zero
   system->memory = (uint8_t *)(calloc(32 * 1024, sizeof(uint8_t)));
@@ -499,13 +527,102 @@ void updateWatchdog(System *system, FILE *output)
 
     system->control.pcAlreadyIncremented = true;
     system->control.interrupt.hasInterrupt = false;
-    
+
     system->cpu.registers[IPC] = system->cpu.registers[PC];
     system->cpu.registers[PC] = HARDWARE1_INTERRUPT_ADDR;
     system->cpu.registers[CR] = HARDWARE1_INTERRUPT_CODE;
 
     printInterruptMessage(HARDWARE1_INTERRUPT_ADDR, output);
   }
+}
+
+/******************************************************
+ * FPU
+ *******************************************************/
+
+void decodeFPUCmd(FPU *fpu, uint8_t cmd)
+{
+  switch (cmd)
+  {
+  case ADDITION_FPU_CODE:
+    addFPU(fpu);
+    break;
+  case SUBTRACTION_FPU_CODE:
+    subtractFPU(fpu);
+    break;
+  case MULTIPLICATION_FPU_CODE:
+    multiplyFPU(fpu);
+    break;
+  case DIVISION_FPU_CODE:
+    divideFPU(fpu);
+    break;
+  case ASSIGN_X_FROM_Z_FPU_CODE:
+    assignXFromZFPU(fpu);
+    break;
+  case ASSIGN_Y_FROM_Z_FPU_CODE:
+    assignYFromZFPU(fpu);
+    break;
+  case CEILING_FPU_CODE:
+    ceilingZFPU(fpu);
+    break;
+  case FLOOR_FPU_CODE:
+    floorZFPU(fpu);
+    break;
+  case ROUND_FPU_CODE:
+    roundZFPU(fpu);
+    break;
+  default:
+  }
+}
+
+void addFPU(FPU *fpu)
+{
+  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_X] + fpu->registers[FPU_REGISTER_Y];
+}
+
+void subtractFPU(FPU *fpu)
+{
+  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_X] - fpu->registers[FPU_REGISTER_Y];
+}
+
+void multiplyFPU(FPU *fpu)
+{
+  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_X] * fpu->registers[FPU_REGISTER_Y];
+}
+
+void divideFPU(FPU *fpu)
+{
+  if (fpu->registers[FPU_REGISTER_Y] != 0)
+    fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_X] / fpu->registers[FPU_REGISTER_Y];
+  else
+  {
+  }
+  // fpu->registers[ST] = 1;
+}
+
+void assignXFromZFPU(FPU *fpu)
+{
+  fpu->registers[FPU_REGISTER_X] = fpu->registers[FPU_REGISTER_Z];
+}
+
+void assignYFromZFPU(FPU *fpu)
+{
+  fpu->registers[FPU_REGISTER_Y] = fpu->registers[FPU_REGISTER_Z];
+}
+
+void ceilingZFPU(FPU *fpu)
+{
+  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_Z];
+}
+
+void floorZFPU(FPU *fpu)
+{
+  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_Z];
+}
+
+void roundZFPU(FPU *fpu)
+{
+  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_Z];
 }
 
 /******************************************************
