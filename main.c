@@ -32,7 +32,7 @@
 #define IE_FLAG 0b00000010
 #define CY_FLAG 0b00000001
 
-// Interrupt Address
+// Interrupt addresses
 #define INIT_INTERRUPT_ADDR 0x00000000
 #define DIVIDE_BY_ZERO_ADDR 0x00000008
 #define INVALID_INSTRUCTION_ADDR 0x00000004
@@ -41,8 +41,10 @@
 #define HARDWARE2_INTERRUPT_ADDR 0x00000014
 #define HARDWARE3_INTERRUPT_ADDR 0x00000018
 #define HARDWARE4_INTERRUPT_ADDR 0x0000001C
-
 #define WATCHDOG_ADDR 0x80808080
+
+// Interrupt codes
+#define HARDWARE1_INTERRUPT_CODE 0xE1AC04DA
 
 /******************************************************
  * Types
@@ -499,6 +501,7 @@ void updateWatchdog(System *system, FILE *output)
     system->control.pcAlreadyIncremented = true;
     system->control.interrupt.hasInterrupt = false;
     system->cpu.registers[PC] = HARDWARE1_INTERRUPT_ADDR;
+    system->cpu.registers[CR] = HARDWARE1_INTERRUPT_CODE;
 
     printInterruptMessage(HARDWARE1_INTERRUPT_ADDR, output);
   }
