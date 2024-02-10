@@ -52,16 +52,7 @@
 #define FPU_REGISTER_Z 2
 #define FPU_REGISTER_CONTROL 3
 
-#define NO_OPERATION_FPU_CODE 0b00000
-#define ADDITION_FPU_CODE 0b00001
-#define SUBTRACTION_FPU_CODE 0b00010
-#define MULTIPLICATION_FPU_CODE 0b00011
-#define DIVISION_FPU_CODE 0b00100
-#define ASSIGN_X_FROM_Z_FPU_CODE 0b00101
-#define ASSIGN_Y_FROM_Z_FPU_CODE 0b00110
-#define CEILING_FPU_CODE 0b00111
-#define FLOOR_FPU_CODE 0b01000
-#define ROUND_FPU_CODE 0b01001
+#define FPU_CONTROL_ST_MASK 0x00000020
 
 /******************************************************
  * Types
@@ -120,7 +111,7 @@ void decodeInstructions(System *system, FILE *output);
 
 void updateWatchdog(System *system, FILE *output);
 
-void decodeFPUCmd(FPU *fpu, uint8_t cmd);
+void executeFPU(System *system);
 void addFPU(FPU *fpu);
 void subtractFPU(FPU *fpu);
 void multiplyFPU(FPU *fpu);
@@ -130,6 +121,7 @@ void assignYFromZFPU(FPU *fpu);
 void ceilingZFPU(FPU *fpu);
 void floorZFPU(FPU *fpu);
 void roundZFPU(FPU *fpu);
+void setFPUControlSTField(FPU *fpu, bool enable);
 
 void mov(CPU *cpu, FILE *output);
 void movs(CPU *cpu, FILE *output);
@@ -488,6 +480,8 @@ void decodeInstructions(System *system, FILE *output)
 
     updateWatchdog(system, output); // Update the timer every instruction cycle
 
+    executeFPU(system); // FPU
+
     if (!system->control.pcAlreadyIncremented)
       system->cpu.registers[PC] += 4; // next instruction
 
@@ -540,38 +534,43 @@ void updateWatchdog(System *system, FILE *output)
  * FPU
  *******************************************************/
 
-void decodeFPUCmd(FPU *fpu, uint8_t cmd)
+void executeFPU(System *system)
 {
-  switch (cmd)
+  const uint8_t opcode = system->fpu.registers[FPU_REGISTER_CONTROL] & 0x1F;
+
+  switch (opcode)
   {
-  case ADDITION_FPU_CODE:
-    addFPU(fpu);
+  case 0b00000: // No operation
     break;
-  case SUBTRACTION_FPU_CODE:
-    subtractFPU(fpu);
+  case 0b00001: // Adition
+    addFPU(&system->fpu);
     break;
-  case MULTIPLICATION_FPU_CODE:
-    multiplyFPU(fpu);
+  case 0b00010: // Subtraction
+    subtractFPU(&system->fpu);
     break;
-  case DIVISION_FPU_CODE:
-    divideFPU(fpu);
+  case 0b00011: // Multiplication
+    multiplyFPU(&system->fpu);
     break;
-  case ASSIGN_X_FROM_Z_FPU_CODE:
-    assignXFromZFPU(fpu);
+  case 0b00100: // Division
+    divideFPU(&system->fpu);
     break;
-  case ASSIGN_Y_FROM_Z_FPU_CODE:
-    assignYFromZFPU(fpu);
+  case 0b00101: // Assign x from z
+    assignXFromZFPU(&system->fpu);
     break;
-  case CEILING_FPU_CODE:
-    ceilingZFPU(fpu);
+  case 0b00110: // Assign y from z
+    assignYFromZFPU(&system->fpu);
     break;
-  case FLOOR_FPU_CODE:
-    floorZFPU(fpu);
+  case 0b00111: // Ceiling
+    ceilingZFPU(&system->fpu);
     break;
-  case ROUND_FPU_CODE:
-    roundZFPU(fpu);
+  case 0b01000: // Floor
+    floorZFPU(&system->fpu);
+    break;
+  case 0b01001: // Round
+    roundZFPU(&system->fpu);
     break;
   default:
+    setFPUControlSTField(&system->fpu, true);
   }
 }
 
@@ -595,9 +594,7 @@ void divideFPU(FPU *fpu)
   if (fpu->registers[FPU_REGISTER_Y] != 0)
     fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_X] / fpu->registers[FPU_REGISTER_Y];
   else
-  {
-  }
-  // fpu->registers[ST] = 1;
+    setFPUControlSTField(fpu, true);
 }
 
 void assignXFromZFPU(FPU *fpu)
@@ -623,6 +620,14 @@ void floorZFPU(FPU *fpu)
 void roundZFPU(FPU *fpu)
 {
   fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_Z];
+}
+
+void setFPUControlSTField(FPU *fpu, bool enable)
+{
+  if (enable)
+    fpu->registers[FPU_REGISTER_CONTROL] |= FPU_CONTROL_ST_MASK;
+  else
+    fpu->registers[FPU_REGISTER_CONTROL] &= ~FPU_CONTROL_ST_MASK;
 }
 
 /******************************************************
