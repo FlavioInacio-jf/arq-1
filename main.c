@@ -45,6 +45,7 @@
 
 // Interrupt codes
 #define HARDWARE1_INTERRUPT_CODE 0xE1AC04DA
+#define FPU_INTERRUPT_CODE 0x01EEE754
 
 // FPU
 #define FPU_REGISTER_X 0
@@ -111,7 +112,7 @@ void decodeInstructions(System *system, FILE *output);
 
 void updateWatchdog(System *system, FILE *output);
 
-void executeFPU(System *system);
+void executeFPU(System *system, FILE *output);
 void addFPU(FPU *fpu);
 void subtractFPU(FPU *fpu);
 void multiplyFPU(FPU *fpu);
@@ -121,7 +122,9 @@ void assignYFromZFPU(FPU *fpu);
 void ceilingZFPU(FPU *fpu);
 void floorZFPU(FPU *fpu);
 void roundZFPU(FPU *fpu);
+bool getFPUControlSTField(FPU *fpu);
 void setFPUControlSTField(FPU *fpu, bool enable);
+void handleFPUErrors(System *system, FILE *output);
 
 void mov(CPU *cpu, FILE *output);
 void movs(CPU *cpu, FILE *output);
@@ -480,7 +483,7 @@ void decodeInstructions(System *system, FILE *output)
 
     updateWatchdog(system, output); // Update the timer every instruction cycle
 
-    executeFPU(system); // FPU
+    executeFPU(system, output); // FPU
 
     if (!system->control.pcAlreadyIncremented)
       system->cpu.registers[PC] += 4; // next instruction
@@ -534,7 +537,7 @@ void updateWatchdog(System *system, FILE *output)
  * FPU
  *******************************************************/
 
-void executeFPU(System *system)
+void executeFPU(System *system, FILE *output)
 {
   const uint8_t opcode = system->fpu.registers[FPU_REGISTER_CONTROL] & 0x1F;
 
@@ -572,6 +575,8 @@ void executeFPU(System *system)
   default:
     setFPUControlSTField(&system->fpu, true);
   }
+
+  handleFPUErrors(system, output); // Dealing with interruptions
 }
 
 void addFPU(FPU *fpu)
@@ -628,6 +633,33 @@ void setFPUControlSTField(FPU *fpu, bool enable)
     fpu->registers[FPU_REGISTER_CONTROL] |= FPU_CONTROL_ST_MASK;
   else
     fpu->registers[FPU_REGISTER_CONTROL] &= ~FPU_CONTROL_ST_MASK;
+}
+
+bool getFPUControlSTField(FPU *fpu)
+{
+  const uint32_t st = fpu->registers[FPU_REGISTER_CONTROL] &= FPU_CONTROL_ST_MASK;
+
+  if (st)
+    return true;
+  else
+    return false;
+}
+
+void handleFPUErrors(System *system, FILE *output)
+{
+
+  if (getFPUControlSTField(&system->fpu)) // Error in operation (ST = 1)
+  {
+    handlePrepareForISR(system);
+
+    system->control.pcAlreadyIncremented = true;
+
+    system->cpu.registers[IPC] = system->cpu.registers[PC];
+    system->cpu.registers[PC] = HARDWARE2_INTERRUPT_ADDR;
+    system->cpu.registers[CR] = FPU_INTERRUPT_CODE;
+
+    printInterruptMessage(HARDWARE2_INTERRUPT_ADDR, output);
+  }
 }
 
 /******************************************************
