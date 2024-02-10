@@ -995,8 +995,8 @@ void sra(CPU *cpu, FILE *output)
   const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const int64_t valueZ = extendSign64(cpu->registers[z], 32);
-  const int64_t valueY = extendSign64(cpu->registers[y], 32);
+  const int64_t valueZ = cpu->registers[z];
+  const int64_t valueY = cpu->registers[y];
 
   const int64_t result = ((valueZ << 32) | valueY) >> (l + 1);
 
