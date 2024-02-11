@@ -64,39 +64,48 @@
  * Types
  *******************************************************/
 
-struct TCPU
+typedef struct
 {
   uint32_t registers[NUM_REGISTERS];
-};
-typedef struct TCPU CPU;
+} CPU;
 
-struct TFPU
-{
-  uint32_t registers[4];
-};
-typedef struct TFPU FPU;
-
-struct TWatchdog
-{
-  int32_t registers;
-};
-typedef struct TWatchdog Watchdog;
-
-struct TInterrupt
+typedef struct
 {
   bool hasInterrupt;
-};
-typedef struct TInterrupt Interrupt;
+  uint32_t code;
+} FPUInterrupt;
 
-struct TControl
+typedef struct
+{
+  uint32_t counter;
+  bool enabled;
+  FPUInterrupt interrupt;
+} FPUTimer;
+
+typedef struct
+{
+  uint32_t registers[4];
+  FPUTimer timer;
+} FPU;
+
+typedef struct
+{
+  int32_t registers;
+} Watchdog;
+
+typedef struct
+{
+  bool hasInterrupt;
+} Interrupt;
+
+typedef struct
 {
   bool run;
   bool pcAlreadyIncremented;
   Interrupt interrupt;
-};
-typedef struct TControl Control;
+} Control;
 
-struct TSystem
+typedef struct TSystem
 {
   CPU cpu;
   FPU fpu;
@@ -104,9 +113,7 @@ struct TSystem
   uint8_t *memory;
 
   Control control;
-};
-
-typedef struct TSystem System;
+} System;
 
 /******************************************************
  * Functin Signature
@@ -130,6 +137,9 @@ void roundZFPU(FPU *fpu);
 bool getFPUControlSTField(FPU *fpu);
 void setFPUControlSTField(FPU *fpu, bool enable);
 void handleFPUErrors(System *system, FILE *output);
+void setFPUTimerSingleCycle(FPUTimer *timer);
+void setFPUTimerVariableCycle(FPUTimer *timer, uint32_t newCounterValue);
+void decrementFPUTimer(FPUTimer *timer);
 
 void mov(CPU *cpu, FILE *output);
 void movs(CPU *cpu, FILE *output);
@@ -552,34 +562,45 @@ void executeFPU(System *system, FILE *output)
     break;
   case 0b00001: // Adition
     addFPU(&system->fpu);
+    setFPUTimerVariableCycle(&system->fpu.timer, 1);
     break;
   case 0b00010: // Subtraction
     subtractFPU(&system->fpu);
+    setFPUTimerVariableCycle(&system->fpu.timer, 1);
     break;
   case 0b00011: // Multiplication
     multiplyFPU(&system->fpu);
+    setFPUTimerVariableCycle(&system->fpu.timer, 1);
     break;
   case 0b00100: // Division
     divideFPU(&system->fpu);
+    setFPUTimerVariableCycle(&system->fpu.timer, 1);
     break;
   case 0b00101: // Assign x from z
     assignXFromZFPU(&system->fpu);
+    setFPUTimerSingleCycle(&system->fpu.timer);
     break;
   case 0b00110: // Assign y from z
     assignYFromZFPU(&system->fpu);
+    setFPUTimerSingleCycle(&system->fpu.timer);
     break;
   case 0b00111: // Ceiling
     ceilingZFPU(&system->fpu);
+    setFPUTimerSingleCycle(&system->fpu.timer);
     break;
   case 0b01000: // Floor
     floorZFPU(&system->fpu);
+    setFPUTimerSingleCycle(&system->fpu.timer);
     break;
   case 0b01001: // Round
     roundZFPU(&system->fpu);
+    setFPUTimerSingleCycle(&system->fpu.timer);
     break;
   default:
     setFPUControlSTField(&system->fpu, true);
   }
+
+  decrementFPUTimer(&system->fpu.timer);
 
   handleFPUErrors(system, output); // Dealing with interruptions
 }
@@ -656,7 +677,6 @@ void handleFPUErrors(System *system, FILE *output)
   if (getFPUControlSTField(&system->fpu)) // Error in operation (ST = 1)
   {
     handlePrepareForISR(system);
-
     system->control.pcAlreadyIncremented = true;
 
     system->cpu.registers[IPC] = system->cpu.registers[PC];
@@ -664,6 +684,51 @@ void handleFPUErrors(System *system, FILE *output)
     system->cpu.registers[CR] = FPU_INTERRUPT_CODE;
 
     printInterruptMessage(HARDWARE2_INTERRUPT_ADDR, output);
+  }
+
+  else if (system->fpu.timer.interrupt.hasInterrupt)
+  {
+    handlePrepareForISR(system);
+    system->control.pcAlreadyIncremented = true;
+
+    system->cpu.registers[IPC] = system->cpu.registers[PC];
+    system->cpu.registers[PC] = system->fpu.timer.interrupt.code;
+    system->cpu.registers[CR] = FPU_INTERRUPT_CODE;
+
+    printInterruptMessage(system->fpu.timer.interrupt.code, output);
+
+    system->fpu.timer.interrupt.hasInterrupt = false;
+  }
+}
+
+void setFPUTimerSingleCycle(FPUTimer *timer)
+{
+  timer->interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+  timer->counter = 2;
+
+  timer->enabled = true;
+  timer->interrupt.hasInterrupt = false;
+}
+
+void setFPUTimerVariableCycle(FPUTimer *timer, uint32_t newCounterValue)
+{
+  timer->interrupt.code = HARDWARE3_INTERRUPT_ADDR;
+  timer->counter = newCounterValue + 1;
+
+  timer->enabled = true;
+  timer->interrupt.hasInterrupt = false;
+}
+
+void decrementFPUTimer(FPUTimer *timer)
+{
+  if (timer->enabled && timer->counter > 0)
+  {
+    timer->counter--;
+    if (timer->counter == 0)
+    {
+      timer->enabled = false;
+      timer->interrupt.hasInterrupt = true;
+    }
   }
 }
 
