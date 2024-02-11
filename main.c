@@ -53,6 +53,11 @@
 #define FPU_REGISTER_Z 2
 #define FPU_REGISTER_CONTROL 3
 
+#define FPU_REGISTER_X_ADDR 0x80808880
+#define FPU_REGISTER_Y_ADDR 0x80808884
+#define FPU_REGISTER_Z_ADDR 0x80808888
+#define FPU_REGISTER_CONTROL_ADDR 0x8080888C
+
 #define FPU_CONTROL_ST_MASK 0x00000020
 
 /******************************************************
@@ -2169,10 +2174,25 @@ void s32(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 2) : i << 2;
-  if (memoryAddress == WATCHDOG_ADDR)
-    system->watchdog.registers = system->cpu.registers[z];
-  else
+
+  switch (memoryAddress)
   {
+  case WATCHDOG_ADDR:
+    system->watchdog.registers = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_X_ADDR:
+    system->fpu.registers[FPU_REGISTER_X] = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_Y_ADDR:
+    system->fpu.registers[FPU_REGISTER_Y] = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_Z_ADDR:
+    system->fpu.registers[FPU_REGISTER_Z] = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_CONTROL_ADDR:
+    system->fpu.registers[FPU_REGISTER_CONTROL] = system->cpu.registers[z];
+    break;
+  default:
     if (memoryAddress < (NUM_REGISTERS * 1024))
     {
       system->memory[memoryAddress + 0] = (system->cpu.registers[z] >> 24) & 0xFF;
