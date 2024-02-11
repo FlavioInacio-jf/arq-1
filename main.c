@@ -560,6 +560,8 @@ void updateWatchdog(System *system, FILE *output)
 
 void executeFPU(System *system, FILE *output)
 {
+  handleFPUErrors(system, output); // Dealing with interruptions
+
   const uint8_t opcode = system->fpu.registers[FPU_REGISTER_CONTROL] & 0x1F;
 
   if (opcode != 0)
@@ -609,10 +611,6 @@ void executeFPU(System *system, FILE *output)
   }
 
   decrementFPUTimer(&system->fpu.timer);
-
-  handleFPUErrors(system, output); // Dealing with interruptions
-
-  system->fpu.previousControlStatus = getFPUControlSTField(&system->fpu); // Preserving controller status to run in the next cycle
 }
 
 void addFPU(FPU *fpu)
@@ -635,7 +633,7 @@ void divideFPU(FPU *fpu)
   if (fpu->registers[FPU_REGISTER_Y] != 0)
     fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_X] / fpu->registers[FPU_REGISTER_Y];
   else
-    setFPUControlSTField(fpu, true);
+    fpu->previousControlStatus = true;
 }
 
 void assignXFromZFPU(FPU *fpu)
@@ -696,7 +694,7 @@ void handleFPUErrors(System *system, FILE *output)
     printInterruptMessage(HARDWARE2_INTERRUPT_ADDR, output);
 
     system->fpu.previousControlStatus = false;
-    system->fpu.registers[FPU_REGISTER_CONTROL] = 0; // RESET FPU control register
+    system->fpu.registers[FPU_REGISTER_CONTROL] = 0x0000020; // RESET FPU control register
   }
 
   else if (system->fpu.timer.interrupt.hasInterrupt)
