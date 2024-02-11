@@ -562,48 +562,50 @@ void executeFPU(System *system, FILE *output)
 {
   const uint8_t opcode = system->fpu.registers[FPU_REGISTER_CONTROL] & 0x1F;
 
-  switch (opcode)
+  if (opcode != 0)
   {
-  case 0b00000: // No operation
-    break;
-  case 0b00001: // Adition
-    addFPU(&system->fpu);
-    setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
-    break;
-  case 0b00010: // Subtraction
-    subtractFPU(&system->fpu);
-    setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
-    break;
-  case 0b00011: // Multiplication
-    multiplyFPU(&system->fpu);
-    setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
-    break;
-  case 0b00100: // Division
-    divideFPU(&system->fpu);
-    setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
-    break;
-  case 0b00101: // Assign x from z
-    assignXFromZFPU(&system->fpu);
-    setFPUTimerSingleCycle(&system->fpu.timer);
-    break;
-  case 0b00110: // Assign y from z
-    assignYFromZFPU(&system->fpu);
-    setFPUTimerSingleCycle(&system->fpu.timer);
-    break;
-  case 0b00111: // Ceiling
-    ceilingZFPU(&system->fpu);
-    setFPUTimerSingleCycle(&system->fpu.timer);
-    break;
-  case 0b01000: // Floor
-    floorZFPU(&system->fpu);
-    setFPUTimerSingleCycle(&system->fpu.timer);
-    break;
-  case 0b01001: // Round
-    roundZFPU(&system->fpu);
-    setFPUTimerSingleCycle(&system->fpu.timer);
-    break;
-  default:
-    setFPUControlSTField(&system->fpu, true);
+    switch (opcode)
+    {
+
+    case 0b00001: // Adition
+      addFPU(&system->fpu);
+      setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
+      break;
+    case 0b00010: // Subtraction
+      subtractFPU(&system->fpu);
+      setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
+      break;
+    case 0b00011: // Multiplication
+      multiplyFPU(&system->fpu);
+      setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
+      break;
+    case 0b00100: // Division
+      divideFPU(&system->fpu);
+      setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
+      break;
+    case 0b00101: // Assign x from z
+      assignXFromZFPU(&system->fpu);
+      setFPUTimerSingleCycle(&system->fpu.timer);
+      break;
+    case 0b00110: // Assign y from z
+      assignYFromZFPU(&system->fpu);
+      setFPUTimerSingleCycle(&system->fpu.timer);
+      break;
+    case 0b00111: // Ceiling
+      ceilingZFPU(&system->fpu);
+      setFPUTimerSingleCycle(&system->fpu.timer);
+      break;
+    case 0b01000: // Floor
+      floorZFPU(&system->fpu);
+      setFPUTimerSingleCycle(&system->fpu.timer);
+      break;
+    case 0b01001: // Round
+      roundZFPU(&system->fpu);
+      setFPUTimerSingleCycle(&system->fpu.timer);
+      break;
+    default:
+      setFPUControlSTField(&system->fpu, true);
+    }
   }
 
   decrementFPUTimer(&system->fpu.timer);
@@ -611,7 +613,6 @@ void executeFPU(System *system, FILE *output)
   handleFPUErrors(system, output); // Dealing with interruptions
 
   system->fpu.previousControlStatus = getFPUControlSTField(&system->fpu); // Preserving controller status to run in the next cycle
-  system->fpu.registers[FPU_REGISTER_CONTROL] = 0;                        // RESET FPU control register
 }
 
 void addFPU(FPU *fpu)
@@ -672,7 +673,7 @@ void setFPUControlSTField(FPU *fpu, bool enable)
 
 bool getFPUControlSTField(FPU *fpu)
 {
-  const uint32_t st = fpu->registers[FPU_REGISTER_CONTROL] &= FPU_CONTROL_ST_MASK;
+  const uint32_t st = fpu->registers[FPU_REGISTER_CONTROL] & FPU_CONTROL_ST_MASK;
 
   if (st > 0)
     return true;
@@ -695,6 +696,7 @@ void handleFPUErrors(System *system, FILE *output)
     printInterruptMessage(HARDWARE2_INTERRUPT_ADDR, output);
 
     system->fpu.previousControlStatus = false;
+    system->fpu.registers[FPU_REGISTER_CONTROL] = 0; // RESET FPU control register
   }
 
   else if (system->fpu.timer.interrupt.hasInterrupt)
