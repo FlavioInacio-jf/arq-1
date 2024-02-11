@@ -86,6 +86,7 @@ typedef struct
 {
   uint32_t registers[4];
   FPUTimer timer;
+  bool previousControlStatus;
 } FPU;
 
 typedef struct
@@ -256,6 +257,11 @@ void initializeSystem(System *system, FILE *input, FILE *output)
 
   // 4 fpu registers initialized to zero
   memset(system->fpu.registers, 0, sizeof(system->fpu.registers));
+  system->fpu.previousControlStatus = false;
+  system->fpu.timer.counter = 0;
+  system->fpu.timer.enabled = false;
+  system->fpu.timer.interrupt.code = 0;
+  system->fpu.timer.interrupt.hasInterrupt = false;
 
   // 32 KiB memory initialized to zero
   system->memory = (uint8_t *)(calloc(32 * 1024, sizeof(uint8_t)));
@@ -562,19 +568,19 @@ void executeFPU(System *system, FILE *output)
     break;
   case 0b00001: // Adition
     addFPU(&system->fpu);
-    setFPUTimerVariableCycle(&system->fpu.timer, 1);
+    setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
     break;
   case 0b00010: // Subtraction
     subtractFPU(&system->fpu);
-    setFPUTimerVariableCycle(&system->fpu.timer, 1);
+    setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
     break;
   case 0b00011: // Multiplication
     multiplyFPU(&system->fpu);
-    setFPUTimerVariableCycle(&system->fpu.timer, 1);
+    setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
     break;
   case 0b00100: // Division
     divideFPU(&system->fpu);
-    setFPUTimerVariableCycle(&system->fpu.timer, 1);
+    setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
     break;
   case 0b00101: // Assign x from z
     assignXFromZFPU(&system->fpu);
@@ -604,7 +610,8 @@ void executeFPU(System *system, FILE *output)
 
   handleFPUErrors(system, output); // Dealing with interruptions
 
-  system->fpu.registers[FPU_REGISTER_CONTROL] = 0; // RESET FPU control register
+  system->fpu.previousControlStatus = getFPUControlSTField(&system->fpu); // Preserving controller status to run in the next cycle
+  system->fpu.registers[FPU_REGISTER_CONTROL] = 0;                        // RESET FPU control register
 }
 
 void addFPU(FPU *fpu)
@@ -667,7 +674,7 @@ bool getFPUControlSTField(FPU *fpu)
 {
   const uint32_t st = fpu->registers[FPU_REGISTER_CONTROL] &= FPU_CONTROL_ST_MASK;
 
-  if (st)
+  if (st > 0)
     return true;
   else
     return false;
@@ -676,7 +683,7 @@ bool getFPUControlSTField(FPU *fpu)
 void handleFPUErrors(System *system, FILE *output)
 {
 
-  if (getFPUControlSTField(&system->fpu)) // Error in operation (ST = 1)
+  if (system->fpu.previousControlStatus) // Error in operation (ST = 1)
   {
     handlePrepareForISR(system);
     system->control.pcAlreadyIncremented = true;
@@ -686,6 +693,8 @@ void handleFPUErrors(System *system, FILE *output)
     system->cpu.registers[CR] = FPU_INTERRUPT_CODE;
 
     printInterruptMessage(HARDWARE2_INTERRUPT_ADDR, output);
+
+    system->fpu.previousControlStatus = false;
   }
 
   else if (system->fpu.timer.interrupt.hasInterrupt)
