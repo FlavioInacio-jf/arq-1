@@ -603,6 +603,8 @@ void executeFPU(System *system, FILE *output)
   decrementFPUTimer(&system->fpu.timer);
 
   handleFPUErrors(system, output); // Dealing with interruptions
+
+  system->fpu.registers[FPU_REGISTER_CONTROL] = 0; // RESET FPU control register
 }
 
 void addFPU(FPU *fpu)
