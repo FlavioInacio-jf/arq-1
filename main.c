@@ -2118,8 +2118,27 @@ void l8(System *system, FILE *output)
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? system->cpu.registers[x] + i : i;
 
-  if (z != 0 && memoryAddress < (NUM_REGISTERS * 1024))
-    system->cpu.registers[z] = system->memory[memoryAddress];
+  if (z != 0)
+  {
+    switch (memoryAddress)
+    {
+    case FPU_REGISTER_X_ADDR:
+      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_X];
+      break;
+    case FPU_REGISTER_Y_ADDR:
+      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_Y];
+      break;
+    case FPU_REGISTER_Z_ADDR:
+      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_Z];
+      break;
+    case FPU_REGISTER_CONTROL_ADDR:
+      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_CONTROL];
+      break;
+    default:
+      if (memoryAddress < (NUM_REGISTERS * 1024))
+        system->cpu.registers[z] = system->memory[memoryAddress];
+    }
+  }
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -2171,8 +2190,27 @@ void l32(System *system, FILE *output)
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 2) : i << 2;
 
-  if (z != 0 && memoryAddress < (NUM_REGISTERS * 1024))
-    system->cpu.registers[z] = readMemory32(system, memoryAddress);
+  if (z != 0)
+  {
+    switch (memoryAddress)
+    {
+    case FPU_REGISTER_X_ADDR:
+      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_X];
+      break;
+    case FPU_REGISTER_Y_ADDR:
+      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_Y];
+      break;
+    case FPU_REGISTER_Z_ADDR:
+      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_Z];
+      break;
+    case FPU_REGISTER_CONTROL_ADDR:
+      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_CONTROL];
+      break;
+    default:
+      if (memoryAddress < (NUM_REGISTERS * 1024))
+        system->cpu.registers[z] = readMemory32(system, memoryAddress);
+    }
+  }
 
   // Instruction formatting
   char instruction[30] = {0};
