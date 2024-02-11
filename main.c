@@ -148,6 +148,7 @@ void floorZFPU(FPU *fpu);
 void roundZFPU(FPU *fpu);
 bool getFPUControlSTField(FPU *fpu);
 void setFPUControlSTField(FPU *fpu, bool enable);
+void resetFPUControlOpcodeField(FPU *fpu);
 void handleFPUErrors(System *system, FILE *output);
 void setFPUTimerSingleCycle(FPUTimer *timer);
 void setFPUTimerVariableCycle(FPUTimer *timer, uint32_t newCounterValue);
@@ -573,69 +574,61 @@ void updateWatchdog(System *system, FILE *output)
 
 void executeFPU(System *system, FILE *output)
 {
-  handleFPUErrors(system, output); // Dealing with interruptions
-
   const uint8_t opcode = system->fpu.registers[FPU_REGISTER_CONTROL] & 0x1F;
   IEEE754 x, y;
 
-  if (opcode != 0)
-  {
-    switch (opcode)
-    {
-    case 0b00001: // Adition
-      addFPU(&system->fpu);
-      x = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
-      y = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
-
-      setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
-      break;
-    case 0b00010: // Subtraction
-      subtractFPU(&system->fpu);
-      x = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
-      y = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
-
-      setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
-      break;
-    case 0b00011: // Multiplication
-      multiplyFPU(&system->fpu);
-      x = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
-      y = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
-
-      setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
-      break;
-    case 0b00100: // Division
-      divideFPU(&system->fpu);
-      x = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
-      y = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
-
-      setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
-      break;
-    case 0b00101: // Assign x from z
-      assignXFromZFPU(&system->fpu);
-      setFPUTimerSingleCycle(&system->fpu.timer);
-      break;
-    case 0b00110: // Assign y from z
-      assignYFromZFPU(&system->fpu);
-      setFPUTimerSingleCycle(&system->fpu.timer);
-      break;
-    case 0b00111: // Ceiling
-      ceilingZFPU(&system->fpu);
-      setFPUTimerSingleCycle(&system->fpu.timer);
-      break;
-    case 0b01000: // Floor
-      floorZFPU(&system->fpu);
-      setFPUTimerSingleCycle(&system->fpu.timer);
-      break;
-    case 0b01001: // Round
-      roundZFPU(&system->fpu);
-      setFPUTimerSingleCycle(&system->fpu.timer);
-      break;
-    default:
-      setFPUControlSTField(&system->fpu, true);
-    }
-  }
-
   decrementFPUTimer(&system->fpu.timer);
+
+  handleFPUErrors(system, output); // Dealing with interruptions
+
+  switch (opcode)
+  {
+  case 0b0000:
+    break;
+  case 0b00001: // Adition
+    addFPU(&system->fpu);
+    x = convertToIEEE754(system->fpu.registers[FPU_REGISTER_X_ADDR]);
+    y = convertToIEEE754(system->fpu.registers[FPU_REGISTER_X_ADDR]);
+
+    setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
+
+    resetFPUControlOpcodeField(&system->fpu);
+    break;
+  case 0b00010: // Subtraction
+    subtractFPU(&system->fpu);
+
+    break;
+  case 0b00011: // Multiplication
+    multiplyFPU(&system->fpu);
+
+    break;
+  case 0b00100: // Division
+    divideFPU(&system->fpu);
+
+    break;
+  case 0b00101: // Assign x from z
+    assignXFromZFPU(&system->fpu);
+    setFPUTimerSingleCycle(&system->fpu.timer);
+    break;
+  case 0b00110: // Assign y from z
+    assignYFromZFPU(&system->fpu);
+    setFPUTimerSingleCycle(&system->fpu.timer);
+    break;
+  case 0b00111: // Ceiling
+    ceilingZFPU(&system->fpu);
+    setFPUTimerSingleCycle(&system->fpu.timer);
+    break;
+  case 0b01000: // Floor
+    floorZFPU(&system->fpu);
+    setFPUTimerSingleCycle(&system->fpu.timer);
+    break;
+  case 0b01001: // Round
+    roundZFPU(&system->fpu);
+    setFPUTimerSingleCycle(&system->fpu.timer);
+    break;
+  default:
+    setFPUControlSTField(&system->fpu, true);
+  }
 }
 
 void addFPU(FPU *fpu)
@@ -694,6 +687,11 @@ void setFPUControlSTField(FPU *fpu, bool enable)
     fpu->registers[FPU_REGISTER_CONTROL] &= ~FPU_CONTROL_ST_MASK;
 }
 
+void resetFPUControlOpcodeField(FPU *fpu)
+{
+  fpu->registers[FPU_REGISTER_CONTROL] &= FPU_CONTROL_ST_MASK;
+}
+
 bool getFPUControlSTField(FPU *fpu)
 {
   const uint32_t st = fpu->registers[FPU_REGISTER_CONTROL] & FPU_CONTROL_ST_MASK;
@@ -741,7 +739,7 @@ void handleFPUErrors(System *system, FILE *output)
 void setFPUTimerSingleCycle(FPUTimer *timer)
 {
   timer->interrupt.code = HARDWARE4_INTERRUPT_ADDR;
-  timer->counter = 2;
+  timer->counter = 1;
 
   timer->enabled = true;
   timer->interrupt.hasInterrupt = false;
@@ -750,7 +748,7 @@ void setFPUTimerSingleCycle(FPUTimer *timer)
 void setFPUTimerVariableCycle(FPUTimer *timer, uint32_t newCounterValue)
 {
   timer->interrupt.code = HARDWARE3_INTERRUPT_ADDR;
-  timer->counter = newCounterValue + 1;
+  timer->counter = newCounterValue;
 
   timer->enabled = true;
   timer->interrupt.hasInterrupt = false;
@@ -776,11 +774,14 @@ IEEE754 convertToIEEE754(uint32_t integer)
   return result;
 }
 
-uint32_t calculateExponentDifference(IEEE754 a, IEEE754 b)
+uint32_t calculateExponentDifference(IEEE754 x, IEEE754 y)
 {
-  return fabs((uint32_t)(a.u >> IEEE754_FRACTION_BITS) - (int)(b.u >> IEEE754_FRACTION_BITS));
-}
+  int bias = 127; // Bias para IEEE 754 de 32 bits
+  int exponentX = ((x.u >> 23) & 0xFF) - bias;
+  int exponentY = ((y.u >> 23) & 0xFF) - bias;
 
+  return abs(exponentX - exponentY) + 1;
+}
 /******************************************************
  * Arithmetic and logical operations
  *******************************************************/
