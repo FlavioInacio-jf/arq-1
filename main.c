@@ -2121,8 +2121,24 @@ void s8(System *system, FILE *output)
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? system->cpu.registers[x] + i : i;
 
-  if (memoryAddress < (NUM_REGISTERS * 1024))
-    system->memory[memoryAddress] = system->cpu.registers[z];
+  switch (memoryAddress)
+  {
+  case FPU_REGISTER_X_ADDR:
+    system->fpu.registers[FPU_REGISTER_X] = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_Y_ADDR:
+    system->fpu.registers[FPU_REGISTER_Y] = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_Z_ADDR:
+    system->fpu.registers[FPU_REGISTER_Z] = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_CONTROL_ADDR:
+    system->fpu.registers[FPU_REGISTER_CONTROL] = system->cpu.registers[z];
+    break;
+  default:
+    if (memoryAddress < (NUM_REGISTERS * 1024))
+      system->memory[memoryAddress] = system->cpu.registers[z];
+  }
 
   // Instruction formatting
   char instruction[50] = {0};
