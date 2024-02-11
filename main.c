@@ -2173,7 +2173,9 @@ void l8(System *system, FILE *output)
       system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_CONTROL];
       break;
     default:
-      if (memoryAddress < (NUM_REGISTERS * 1024))
+      if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
+        system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_CONTROL];
+      else if (memoryAddress < (NUM_REGISTERS * 1024))
         system->cpu.registers[z] = system->memory[memoryAddress];
     }
   }
@@ -2245,7 +2247,9 @@ void l32(System *system, FILE *output)
       system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_CONTROL];
       break;
     default:
-      if (memoryAddress < (NUM_REGISTERS * 1024))
+      if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
+        system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_CONTROL];
+      else if (memoryAddress < (NUM_REGISTERS * 1024))
         system->cpu.registers[z] = readMemory32(system, memoryAddress);
     }
   }
@@ -2363,7 +2367,9 @@ void s32(System *system, FILE *output)
     system->fpu.registers[FPU_REGISTER_CONTROL] = system->cpu.registers[z];
     break;
   default:
-    if (memoryAddress < (NUM_REGISTERS * 1024))
+    if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
+      system->fpu.registers[FPU_REGISTER_CONTROL] = system->cpu.registers[z];
+    else if (memoryAddress < (NUM_REGISTERS * 1024))
     {
       system->memory[memoryAddress + 0] = (system->cpu.registers[z] >> 24) & 0xFF;
       system->memory[memoryAddress + 1] = (system->cpu.registers[z] >> 16) & 0xFF;
