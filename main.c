@@ -2,12 +2,13 @@
  * Libraries
  *******************************************************/
 
-#include <stdint.h> // Integer types with specific widths.
-#include <stdlib.h> // General-purpose functions, including memory allocation and random number generation.
-#include <stdio.h>  // Standard Input/Output library for input and output operations.
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <math.h>
 
 /******************************************************
  * Utility Constants
@@ -57,12 +58,22 @@
 #define FPU_REGISTER_Y_ADDR 0x80808884
 #define FPU_REGISTER_Z_ADDR 0x80808888
 #define FPU_REGISTER_CONTROL_ADDR 0x8080888C
+#define FPU_REGISTER_CONTROL_ADDR_OTHER 0x8080888F
 
 #define FPU_CONTROL_ST_MASK 0x00000020
+
+#define IEEE754_EXPONENT_BITS 8
+#define IEEE754_FRACTION_BITS 23
 
 /******************************************************
  * Types
  *******************************************************/
+
+typedef union
+{
+  float f;
+  uint32_t u;
+} IEEE754;
 
 typedef struct
 {
@@ -141,6 +152,8 @@ void handleFPUErrors(System *system, FILE *output);
 void setFPUTimerSingleCycle(FPUTimer *timer);
 void setFPUTimerVariableCycle(FPUTimer *timer, uint32_t newCounterValue);
 void decrementFPUTimer(FPUTimer *timer);
+IEEE754 convertToIEEE754(uint32_t integer);
+uint32_t calculateExponentDifference(IEEE754 a, IEEE754 b);
 
 void mov(CPU *cpu, FILE *output);
 void movs(CPU *cpu, FILE *output);
@@ -563,27 +576,39 @@ void executeFPU(System *system, FILE *output)
   handleFPUErrors(system, output); // Dealing with interruptions
 
   const uint8_t opcode = system->fpu.registers[FPU_REGISTER_CONTROL] & 0x1F;
+  IEEE754 x, y;
 
   if (opcode != 0)
   {
     switch (opcode)
     {
-
     case 0b00001: // Adition
       addFPU(&system->fpu);
-      setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
+      x = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
+      y = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
+
+      setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
       break;
     case 0b00010: // Subtraction
       subtractFPU(&system->fpu);
-      setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
+      x = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
+      y = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
+
+      setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
       break;
     case 0b00011: // Multiplication
       multiplyFPU(&system->fpu);
-      setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
+      x = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
+      y = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
+
+      setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
       break;
     case 0b00100: // Division
       divideFPU(&system->fpu);
-      setFPUTimerVariableCycle(&system->fpu.timer, 1000000);
+      x = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
+      y = (IEEE754)system->fpu.registers[FPU_REGISTER_X_ADDR];
+
+      setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
       break;
     case 0b00101: // Assign x from z
       assignXFromZFPU(&system->fpu);
@@ -709,6 +734,7 @@ void handleFPUErrors(System *system, FILE *output)
     printInterruptMessage(system->fpu.timer.interrupt.code, output);
 
     system->fpu.timer.interrupt.hasInterrupt = false;
+    system->fpu.registers[FPU_REGISTER_CONTROL] = 0x0000000;
   }
 }
 
@@ -741,6 +767,18 @@ void decrementFPUTimer(FPUTimer *timer)
       timer->interrupt.hasInterrupt = true;
     }
   }
+}
+
+IEEE754 convertToIEEE754(uint32_t integer)
+{
+  IEEE754 result;
+  result.f = (float)integer;
+  return result;
+}
+
+uint32_t calculateExponentDifference(IEEE754 a, IEEE754 b)
+{
+  return fabs((uint32_t)(a.u >> IEEE754_FRACTION_BITS) - (int)(b.u >> IEEE754_FRACTION_BITS));
 }
 
 /******************************************************
@@ -2250,7 +2288,9 @@ void s8(System *system, FILE *output)
     system->fpu.registers[FPU_REGISTER_CONTROL] = system->cpu.registers[z];
     break;
   default:
-    if (memoryAddress < (NUM_REGISTERS * 1024))
+    if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
+      system->fpu.registers[FPU_REGISTER_CONTROL] = system->cpu.registers[z];
+    else if (memoryAddress < (NUM_REGISTERS * 1024))
       system->memory[memoryAddress] = system->cpu.registers[z];
   }
 
