@@ -115,6 +115,7 @@ typedef struct
   bool run;
   bool pcAlreadyIncremented;
   Interrupt interrupt;
+  uint32_t oldPC;
 } Control;
 
 typedef struct TSystem
@@ -148,7 +149,7 @@ void floorZFPU(FPU *fpu);
 void roundZFPU(FPU *fpu);
 bool getFPUControlSTField(FPU *fpu);
 void setFPUControlSTField(FPU *fpu, bool enable);
-void resetFPUControlOpcodeField(FPU *fpu);
+void resetFPUControlOPCodeField(FPU *fpu);
 void handleFPUErrors(System *system, FILE *output);
 void setFPUTimerSingleCycle(FPUTimer *timer);
 void setFPUTimerVariableCycle(FPUTimer *timer, uint32_t newCounterValue);
@@ -323,7 +324,9 @@ void decodeInstructions(System *system, FILE *output)
 
   while (system->control.run)
   {
+
     const uint32_t ir = readMemory32(system, system->cpu.registers[PC]);
+    system->control.oldPC = system->cpu.registers[PC];
 
     system->cpu.registers[IR] = ir;
 
@@ -592,7 +595,7 @@ void executeFPU(System *system, FILE *output)
 
     setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
 
-    resetFPUControlOpcodeField(&system->fpu);
+    resetFPUControlOPCodeField(&system->fpu);
     break;
   case 0b00010: // Subtraction
     subtractFPU(&system->fpu);
@@ -687,7 +690,7 @@ void setFPUControlSTField(FPU *fpu, bool enable)
     fpu->registers[FPU_REGISTER_CONTROL] &= ~FPU_CONTROL_ST_MASK;
 }
 
-void resetFPUControlOpcodeField(FPU *fpu)
+void resetFPUControlOPCodeField(FPU *fpu)
 {
   fpu->registers[FPU_REGISTER_CONTROL] &= FPU_CONTROL_ST_MASK;
 }
@@ -710,7 +713,7 @@ void handleFPUErrors(System *system, FILE *output)
     handlePrepareForISR(system);
     system->control.pcAlreadyIncremented = true;
 
-    system->cpu.registers[IPC] = system->cpu.registers[PC];
+    system->cpu.registers[IPC] = system->control.oldPC;
     system->cpu.registers[PC] = HARDWARE2_INTERRUPT_ADDR;
     system->cpu.registers[CR] = FPU_INTERRUPT_CODE;
 
@@ -725,7 +728,7 @@ void handleFPUErrors(System *system, FILE *output)
     handlePrepareForISR(system);
     system->control.pcAlreadyIncremented = true;
 
-    system->cpu.registers[IPC] = system->cpu.registers[PC];
+    system->cpu.registers[IPC] = system->control.oldPC;
     system->cpu.registers[PC] = system->fpu.timer.interrupt.code;
     system->cpu.registers[CR] = FPU_INTERRUPT_CODE;
 
