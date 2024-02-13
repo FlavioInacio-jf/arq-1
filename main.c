@@ -49,11 +49,6 @@
 #define FPU_INTERRUPT_CODE 0x01EEE754
 
 // FPU
-#define FPU_REGISTER_X 0
-#define FPU_REGISTER_Y 1
-#define FPU_REGISTER_Z 2
-#define FPU_REGISTER_CONTROL 3
-
 #define FPU_REGISTER_X_ADDR 0x80808880
 #define FPU_REGISTER_Y_ADDR 0x80808884
 #define FPU_REGISTER_Z_ADDR 0x80808888
@@ -95,7 +90,15 @@ typedef struct
 
 typedef struct
 {
-  uint32_t registers[4];
+  IEEE754 x;
+  IEEE754 y;
+  IEEE754 z;
+  uint32_t control;
+} FPURegister;
+
+typedef struct
+{
+  FPURegister registers;
   FPUTimer timer;
   bool previousControlStatus;
 } FPU;
@@ -270,9 +273,21 @@ void initializeSystem(System *system, FILE *input, FILE *output)
   // watchdog
   system->watchdog.registers = 0;
 
-  // 4 fpu registers initialized to zero
-  memset(system->fpu.registers, 0, sizeof(system->fpu.registers));
+  // Reset FPU registers
+  system->fpu.registers.control = 0;
+  system->fpu.registers.x.f = 0;
+  system->fpu.registers.x.u = 0;
+
+  system->fpu.registers.y.f = 0;
+  system->fpu.registers.y.u = 0;
+
+  system->fpu.registers.z.f = 0;
+  system->fpu.registers.z.u = 0;
+
+  // Reset FPU controller
   system->fpu.previousControlStatus = false;
+
+  // Reset FPU timer
   system->fpu.timer.counter = 0;
   system->fpu.timer.enabled = false;
   system->fpu.timer.interrupt.code = 0;
@@ -577,7 +592,7 @@ void updateWatchdog(System *system, FILE *output)
 
 void executeFPU(System *system, FILE *output)
 {
-  const uint8_t opcode = system->fpu.registers[FPU_REGISTER_CONTROL] & 0x1F;
+  const uint8_t opcode = system->fpu.registers.control & 0x1F;
   IEEE754 x, y;
 
   decrementFPUTimer(&system->fpu.timer);
@@ -590,8 +605,8 @@ void executeFPU(System *system, FILE *output)
     break;
   case 0b00001: // Adition
     addFPU(&system->fpu);
-    x = convertToIEEE754(system->fpu.registers[FPU_REGISTER_X_ADDR]);
-    y = convertToIEEE754(system->fpu.registers[FPU_REGISTER_X_ADDR]);
+    x = system->fpu.registers.x;
+    y = system->fpu.registers.y;
 
     setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
 
@@ -636,68 +651,79 @@ void executeFPU(System *system, FILE *output)
 
 void addFPU(FPU *fpu)
 {
-  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_X] + fpu->registers[FPU_REGISTER_Y];
+  fpu->registers.z.f = fpu->registers.x.f + fpu->registers.y.f;
+  fpu->registers.z.u = fpu->registers.x.u + fpu->registers.y.u;
 }
 
 void subtractFPU(FPU *fpu)
 {
-  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_X] - fpu->registers[FPU_REGISTER_Y];
+  fpu->registers.z.f = fpu->registers.x.f - fpu->registers.y.f;
+  fpu->registers.z.u = fpu->registers.x.u - fpu->registers.y.u;
 }
 
 void multiplyFPU(FPU *fpu)
 {
-  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_X] * fpu->registers[FPU_REGISTER_Y];
+  fpu->registers.z.f = fpu->registers.x.f * fpu->registers.y.f;
+  fpu->registers.z.u = fpu->registers.x.u * fpu->registers.y.u;
 }
 
 void divideFPU(FPU *fpu)
 {
-  if (fpu->registers[FPU_REGISTER_Y] != 0)
-    fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_X] / fpu->registers[FPU_REGISTER_Y];
+  if (fpu->registers.y.f != 0 && fpu->registers.y.u != 0)
+  {
+    fpu->registers.z.f = fpu->registers.x.f / fpu->registers.y.f;
+    fpu->registers.z.u = fpu->registers.x.u / fpu->registers.y.u;
+  }
   else
     fpu->previousControlStatus = true;
 }
 
 void assignXFromZFPU(FPU *fpu)
 {
-  fpu->registers[FPU_REGISTER_X] = fpu->registers[FPU_REGISTER_Z];
+  fpu->registers.x.f = fpu->registers.z.f;
+  fpu->registers.x.u = fpu->registers.z.u;
 }
 
 void assignYFromZFPU(FPU *fpu)
 {
-  fpu->registers[FPU_REGISTER_Y] = fpu->registers[FPU_REGISTER_Z];
+  fpu->registers.y.f = fpu->registers.z.f;
+  fpu->registers.y.u = fpu->registers.z.u;
 }
 
 void ceilingZFPU(FPU *fpu)
 {
-  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_Z];
+  fpu->registers.z.f = fpu->registers.z.f;
+  fpu->registers.z.u = fpu->registers.z.u;
 }
 
 void floorZFPU(FPU *fpu)
 {
-  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_Z];
+  fpu->registers.z.f = fpu->registers.z.f;
+  fpu->registers.z.u = fpu->registers.z.u;
 }
 
 void roundZFPU(FPU *fpu)
 {
-  fpu->registers[FPU_REGISTER_Z] = fpu->registers[FPU_REGISTER_Z];
+  fpu->registers.z.f = fpu->registers.z.f;
+  fpu->registers.z.u = fpu->registers.z.u;
 }
 
 void setFPUControlSTField(FPU *fpu, bool enable)
 {
   if (enable)
-    fpu->registers[FPU_REGISTER_CONTROL] |= FPU_CONTROL_ST_MASK;
+    fpu->registers.control |= FPU_CONTROL_ST_MASK;
   else
-    fpu->registers[FPU_REGISTER_CONTROL] &= ~FPU_CONTROL_ST_MASK;
+    fpu->registers.control &= ~FPU_CONTROL_ST_MASK;
 }
 
 void resetFPUControlOPCodeField(FPU *fpu)
 {
-  fpu->registers[FPU_REGISTER_CONTROL] &= FPU_CONTROL_ST_MASK;
+  fpu->registers.control &= FPU_CONTROL_ST_MASK;
 }
 
 bool getFPUControlSTField(FPU *fpu)
 {
-  const uint32_t st = fpu->registers[FPU_REGISTER_CONTROL] & FPU_CONTROL_ST_MASK;
+  const uint32_t st = fpu->registers.control & FPU_CONTROL_ST_MASK;
 
   if (st > 0)
     return true;
@@ -720,7 +746,7 @@ void handleFPUErrors(System *system, FILE *output)
     printInterruptMessage(HARDWARE2_INTERRUPT_ADDR, output);
 
     system->fpu.previousControlStatus = false;
-    system->fpu.registers[FPU_REGISTER_CONTROL] = 0x0000020; // RESET FPU control register
+    system->fpu.registers.control = 0x0000020; // RESET FPU control register
   }
 
   else if (system->fpu.timer.interrupt.hasInterrupt)
@@ -735,7 +761,7 @@ void handleFPUErrors(System *system, FILE *output)
     printInterruptMessage(system->fpu.timer.interrupt.code, output);
 
     system->fpu.timer.interrupt.hasInterrupt = false;
-    system->fpu.registers[FPU_REGISTER_CONTROL] = 0x0000000;
+    system->fpu.registers.control = 0x0000000;
   }
 }
 
@@ -2165,20 +2191,20 @@ void l8(System *system, FILE *output)
     switch (memoryAddress)
     {
     case FPU_REGISTER_X_ADDR:
-      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_X];
+      system->cpu.registers[z] = system->fpu.registers.x.u;
       break;
     case FPU_REGISTER_Y_ADDR:
-      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_Y];
+      system->cpu.registers[z] = system->fpu.registers.y.u;
       break;
     case FPU_REGISTER_Z_ADDR:
-      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_Z];
+      system->cpu.registers[z] = system->fpu.registers.z.u;
       break;
     case FPU_REGISTER_CONTROL_ADDR:
-      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_CONTROL];
+      system->cpu.registers[z] = system->fpu.registers.control;
       break;
     default:
       if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
-        system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_CONTROL];
+        system->cpu.registers[z] = system->fpu.registers.control;
       else if (memoryAddress < (NUM_REGISTERS * 1024))
         system->cpu.registers[z] = system->memory[memoryAddress];
     }
@@ -2239,20 +2265,20 @@ void l32(System *system, FILE *output)
     switch (memoryAddress)
     {
     case FPU_REGISTER_X_ADDR:
-      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_X];
+      system->cpu.registers[z] = system->fpu.registers.x.u;
       break;
     case FPU_REGISTER_Y_ADDR:
-      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_Y];
+      system->cpu.registers[z] = system->fpu.registers.y.u;
       break;
     case FPU_REGISTER_Z_ADDR:
-      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_Z];
+      system->cpu.registers[z] = system->fpu.registers.z.u;
       break;
     case FPU_REGISTER_CONTROL_ADDR:
-      system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_CONTROL];
+      system->cpu.registers[z] = system->fpu.registers.control;
       break;
     default:
       if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
-        system->cpu.registers[z] = system->fpu.registers[FPU_REGISTER_CONTROL];
+        system->cpu.registers[z] = system->fpu.registers.control;
       else if (memoryAddress < (NUM_REGISTERS * 1024))
         system->cpu.registers[z] = readMemory32(system, memoryAddress);
     }
@@ -2284,20 +2310,23 @@ void s8(System *system, FILE *output)
   switch (memoryAddress)
   {
   case FPU_REGISTER_X_ADDR:
-    system->fpu.registers[FPU_REGISTER_X] = system->cpu.registers[z];
+    system->fpu.registers.x.f = system->cpu.registers[z];
+    system->fpu.registers.x.u = system->cpu.registers[z];
     break;
   case FPU_REGISTER_Y_ADDR:
-    system->fpu.registers[FPU_REGISTER_Y] = system->cpu.registers[z];
+    system->fpu.registers.y.f = system->cpu.registers[z];
+    system->fpu.registers.y.u = system->cpu.registers[z];
     break;
   case FPU_REGISTER_Z_ADDR:
-    system->fpu.registers[FPU_REGISTER_Z] = system->cpu.registers[z];
+    system->fpu.registers.z.f = system->cpu.registers[z];
+    system->fpu.registers.z.u = system->cpu.registers[z];
     break;
   case FPU_REGISTER_CONTROL_ADDR:
-    system->fpu.registers[FPU_REGISTER_CONTROL] = system->cpu.registers[z];
+    system->fpu.registers.control = system->cpu.registers[z];
     break;
   default:
     if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
-      system->fpu.registers[FPU_REGISTER_CONTROL] = system->cpu.registers[z];
+      system->fpu.registers.control = system->cpu.registers[z];
     else if (memoryAddress < (NUM_REGISTERS * 1024))
       system->memory[memoryAddress] = system->cpu.registers[z];
   }
@@ -2359,20 +2388,23 @@ void s32(System *system, FILE *output)
     system->watchdog.registers = system->cpu.registers[z];
     break;
   case FPU_REGISTER_X_ADDR:
-    system->fpu.registers[FPU_REGISTER_X] = system->cpu.registers[z];
+    system->fpu.registers.x.f = system->cpu.registers[z];
+    system->fpu.registers.x.u = system->cpu.registers[z];
     break;
   case FPU_REGISTER_Y_ADDR:
-    system->fpu.registers[FPU_REGISTER_Y] = system->cpu.registers[z];
+    system->fpu.registers.y.f = system->cpu.registers[z];
+    system->fpu.registers.y.u = system->cpu.registers[z];
     break;
   case FPU_REGISTER_Z_ADDR:
-    system->fpu.registers[FPU_REGISTER_Z] = system->cpu.registers[z];
+    system->fpu.registers.z.f = system->cpu.registers[z];
+    system->fpu.registers.z.u = system->cpu.registers[z];
     break;
   case FPU_REGISTER_CONTROL_ADDR:
-    system->fpu.registers[FPU_REGISTER_CONTROL] = system->cpu.registers[z];
+    system->fpu.registers.control = system->cpu.registers[z];
     break;
   default:
     if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
-      system->fpu.registers[FPU_REGISTER_CONTROL] = system->cpu.registers[z];
+      system->fpu.registers.control = system->cpu.registers[z];
     else if (memoryAddress < (NUM_REGISTERS * 1024))
     {
       system->memory[memoryAddress + 0] = (system->cpu.registers[z] >> 24) & 0xFF;
