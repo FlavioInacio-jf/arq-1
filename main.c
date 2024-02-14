@@ -680,13 +680,11 @@ void divideFPU(FPU *fpu)
 
 void assignXFromZFPU(FPU *fpu)
 {
-  fpu->registers.x.f = fpu->registers.z.f;
   fpu->registers.x.u = fpu->registers.z.u;
 }
 
 void assignYFromZFPU(FPU *fpu)
 {
-  fpu->registers.y.f = fpu->registers.z.f;
   fpu->registers.y.u = fpu->registers.z.u;
 }
 
