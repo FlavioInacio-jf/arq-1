@@ -611,10 +611,12 @@ void executeFPU(System *system, FILE *output)
   case 0b00011: // Multiplication
     multiplyFPU(&system->fpu);
 
+    setFPUTimerVariableCycle(system);
     break;
   case 0b00100: // Division
     divideFPU(&system->fpu);
 
+    setFPUTimerVariableCycle(system);
     break;
   case 0b00101: // Assign x from z
     assignXFromZFPU(&system->fpu);
