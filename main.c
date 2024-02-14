@@ -692,20 +692,17 @@ void assignYFromZFPU(FPU *fpu)
 
 void ceilingZFPU(FPU *fpu)
 {
-  fpu->registers.z.f = fpu->registers.z.f;
-  fpu->registers.z.u = fpu->registers.z.u;
+  fpu->registers.z.u = ceilf(fpu->registers.z.f);
 }
 
 void floorZFPU(FPU *fpu)
 {
-  fpu->registers.z.f = fpu->registers.z.f;
-  fpu->registers.z.u = fpu->registers.z.u;
+  fpu->registers.z.u = floorf(fpu->registers.z.f);
 }
 
 void roundZFPU(FPU *fpu)
 {
-  fpu->registers.z.f = fpu->registers.z.f;
-  fpu->registers.z.u = fpu->registers.z.u;
+  fpu->registers.z.u = roundf(fpu->registers.z.f);
 }
 
 void setFPUControlSTField(FPU *fpu, bool enable)
