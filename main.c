@@ -2771,10 +2771,12 @@ void unknownInstruction(System *system, FILE *output)
 
 void handlePrepareForISR(System *system)
 {
-  system->memory[system->cpu.registers[SP] + 0] = ((system->cpu.registers[PC] + 4) >> 24) & 0xFF;
-  system->memory[system->cpu.registers[SP] + 1] = ((system->cpu.registers[PC] + 4) >> 16) & 0xFF;
-  system->memory[system->cpu.registers[SP] + 2] = ((system->cpu.registers[PC] + 4) >> 8) & 0xFF;
-  system->memory[system->cpu.registers[SP] + 3] = (system->cpu.registers[PC] + 4) & 0xFF;
+  const uint32_t pc = system->control.pcAlreadyIncremented ? system->cpu.registers[PC] : system->cpu.registers[PC] + 4;
+
+  system->memory[system->cpu.registers[SP] + 0] = (pc >> 24) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 1] = (pc >> 16) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 2] = (pc >> 8) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 3] = pc & 0xFF;
   system->cpu.registers[SP] -= 4;
 
   system->memory[system->cpu.registers[SP] + 0] = (system->cpu.registers[CR] >> 24) & 0xFF;
