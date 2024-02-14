@@ -601,7 +601,7 @@ void executeFPU(System *system, FILE *output)
 
   switch (opcode)
   {
-  case 0b0000:
+  case 0b00000:
     break;
   case 0b00001: // Adition
     addFPU(&system->fpu);
@@ -626,26 +626,48 @@ void executeFPU(System *system, FILE *output)
     break;
   case 0b00101: // Assign x from z
     assignXFromZFPU(&system->fpu);
-    setFPUTimerSingleCycle(&system->fpu.timer);
+
+    system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+    system->fpu.timer.interrupt.hasInterrupt = true;
+
+    resetFPUControlOPCodeField(&system->fpu);
     break;
   case 0b00110: // Assign y from z
     assignYFromZFPU(&system->fpu);
-    setFPUTimerSingleCycle(&system->fpu.timer);
+
+    system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+    system->fpu.timer.interrupt.hasInterrupt = true;
+
+    resetFPUControlOPCodeField(&system->fpu);
     break;
   case 0b00111: // Ceiling
     ceilingZFPU(&system->fpu);
-    setFPUTimerSingleCycle(&system->fpu.timer);
+
+    system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+    system->fpu.timer.interrupt.hasInterrupt = true;
+
+    resetFPUControlOPCodeField(&system->fpu);
     break;
   case 0b01000: // Floor
     floorZFPU(&system->fpu);
-    setFPUTimerSingleCycle(&system->fpu.timer);
+
+    system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+    system->fpu.timer.interrupt.hasInterrupt = true;
+
+    resetFPUControlOPCodeField(&system->fpu);
     break;
   case 0b01001: // Round
     roundZFPU(&system->fpu);
-    setFPUTimerSingleCycle(&system->fpu.timer);
+
+    system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+    system->fpu.timer.interrupt.hasInterrupt = true;
+
+    resetFPUControlOPCodeField(&system->fpu);
     break;
   default:
     setFPUControlSTField(&system->fpu, true);
+
+    resetFPUControlOPCodeField(&system->fpu);
   }
 }
 
@@ -762,15 +784,6 @@ void handleFPUErrors(System *system, FILE *output)
     system->fpu.timer.interrupt.hasInterrupt = false;
     system->fpu.registers.control = 0x0000000;
   }
-}
-
-void setFPUTimerSingleCycle(FPUTimer *timer)
-{
-  timer->interrupt.code = HARDWARE4_INTERRUPT_ADDR;
-  timer->counter = 1;
-
-  timer->enabled = true;
-  timer->interrupt.hasInterrupt = false;
 }
 
 void setFPUTimerVariableCycle(FPUTimer *timer, uint32_t newCounterValue)
