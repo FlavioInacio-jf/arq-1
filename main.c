@@ -157,7 +157,7 @@ void handleFPUErrors(System *system, FILE *output);
 void setFPUTimerSingleCycle(FPUTimer *timer);
 void setFPUTimerVariableCycle(FPUTimer *timer, uint32_t newCounterValue);
 void decrementFPUTimer(FPUTimer *timer);
-IEEE754 convertToIEEE754(uint32_t integer);
+uint32_t convertToIEEE754(float *x);
 uint32_t calculateExponentDifference(IEEE754 a, IEEE754 b);
 
 void mov(CPU *cpu, FILE *output);
@@ -651,28 +651,32 @@ void executeFPU(System *system, FILE *output)
 
 void addFPU(FPU *fpu)
 {
-  fpu->registers.z.f = fpu->registers.x.f + fpu->registers.y.f;
-  fpu->registers.z.u = fpu->registers.x.u + fpu->registers.y.u;
+  float z = fpu->registers.x.u + fpu->registers.y.u;
+  fpu->registers.z.f = z;
+  fpu->registers.z.u = convertToIEEE754(&z);
 }
 
 void subtractFPU(FPU *fpu)
 {
-  fpu->registers.z.f = fpu->registers.x.f - fpu->registers.y.f;
-  fpu->registers.z.u = fpu->registers.x.u - fpu->registers.y.u;
+  float z = fpu->registers.x.u - fpu->registers.y.u;
+  fpu->registers.z.f = z;
+  fpu->registers.z.u = convertToIEEE754(&z);
 }
 
 void multiplyFPU(FPU *fpu)
 {
-  fpu->registers.z.f = fpu->registers.x.f * fpu->registers.y.f;
-  fpu->registers.z.u = fpu->registers.x.u * fpu->registers.y.u;
+  float z = fpu->registers.x.u * fpu->registers.y.u;
+  fpu->registers.z.f = z;
+  fpu->registers.z.u = convertToIEEE754(&z);
 }
 
 void divideFPU(FPU *fpu)
 {
   if (fpu->registers.y.f != 0 && fpu->registers.y.u != 0)
   {
-    fpu->registers.z.f = fpu->registers.x.f / fpu->registers.y.f;
-    fpu->registers.z.u = fpu->registers.x.u / fpu->registers.y.u;
+    float z = fpu->registers.x.u / fpu->registers.y.u;
+    fpu->registers.z.f = z;
+    fpu->registers.z.u = convertToIEEE754(&z);
   }
   else
     fpu->previousControlStatus = true;
@@ -791,11 +795,11 @@ void decrementFPUTimer(FPUTimer *timer)
   }
 }
 
-IEEE754 convertToIEEE754(uint32_t integer)
+uint32_t convertToIEEE754(float *x)
 {
-  IEEE754 result;
-  result.f = (float)integer;
-  return result;
+  const uint32_t xi = *((uint32_t *)x);
+
+  return xi;
 }
 
 uint32_t calculateExponentDifference(IEEE754 x, IEEE754 y)
