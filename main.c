@@ -740,7 +740,7 @@ bool getFPUControlSTField(FPU *fpu)
 void handleFPUErrors(System *system, FILE *output)
 {
 
-  if (system->fpu.previousControlStatus) // Error in operation (ST = 1)
+  if (system->fpu.previousControlStatus && system->fpu.timer.interrupt.hasInterrupt) // Error in operation (ST = 1)
   {
     handlePrepareForISR(system);
     system->control.pcAlreadyIncremented = true;
