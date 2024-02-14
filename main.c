@@ -57,18 +57,15 @@
 
 #define FPU_CONTROL_ST_MASK 0x00000020
 
-#define IEEE754_EXPONENT_BITS 8
-#define IEEE754_FRACTION_BITS 23
-
 /******************************************************
  * Types
  *******************************************************/
 
-typedef union
+typedef struct
 {
   float f;
   uint32_t u;
-} IEEE754;
+} FPUOperand;
 
 typedef struct
 {
@@ -90,9 +87,9 @@ typedef struct
 
 typedef struct
 {
-  IEEE754 x;
-  IEEE754 y;
-  IEEE754 z;
+  FPUOperand x;
+  FPUOperand y;
+  FPUOperand z;
   uint32_t control;
 } FPURegister;
 
@@ -154,11 +151,10 @@ bool getFPUControlSTField(FPU *fpu);
 void setFPUControlSTField(FPU *fpu, bool enable);
 void resetFPUControlOPCodeField(FPU *fpu);
 void handleFPUErrors(System *system, FILE *output);
-void setFPUTimerSingleCycle(FPUTimer *timer);
-void setFPUTimerVariableCycle(FPUTimer *timer, uint32_t newCounterValue);
+void setFPUTimerVariableCycle(System *system);
 void decrementFPUTimer(FPUTimer *timer);
 uint32_t convertToIEEE754(float *x);
-uint32_t calculateExponentDifference(IEEE754 a, IEEE754 b);
+uint32_t calculateExponentDifference(uint32_t x, uint32_t y);
 
 void mov(CPU *cpu, FILE *output);
 void movs(CPU *cpu, FILE *output);
@@ -593,7 +589,6 @@ void updateWatchdog(System *system, FILE *output)
 void executeFPU(System *system, FILE *output)
 {
   const uint8_t opcode = system->fpu.registers.control & 0x1F;
-  IEEE754 x, y;
 
   decrementFPUTimer(&system->fpu.timer);
 
@@ -605,16 +600,13 @@ void executeFPU(System *system, FILE *output)
     break;
   case 0b00001: // Adition
     addFPU(&system->fpu);
-    x = system->fpu.registers.x;
-    y = system->fpu.registers.y;
 
-    setFPUTimerVariableCycle(&system->fpu.timer, calculateExponentDifference(x, y));
-
-    resetFPUControlOPCodeField(&system->fpu);
+    setFPUTimerVariableCycle(system);
     break;
   case 0b00010: // Subtraction
     subtractFPU(&system->fpu);
 
+    setFPUTimerVariableCycle(system);
     break;
   case 0b00011: // Multiplication
     multiplyFPU(&system->fpu);
@@ -629,65 +621,54 @@ void executeFPU(System *system, FILE *output)
 
     system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
     system->fpu.timer.interrupt.hasInterrupt = true;
-
-    resetFPUControlOPCodeField(&system->fpu);
     break;
   case 0b00110: // Assign y from z
     assignYFromZFPU(&system->fpu);
 
     system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
     system->fpu.timer.interrupt.hasInterrupt = true;
-
-    resetFPUControlOPCodeField(&system->fpu);
     break;
   case 0b00111: // Ceiling
     ceilingZFPU(&system->fpu);
 
     system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
     system->fpu.timer.interrupt.hasInterrupt = true;
-
-    resetFPUControlOPCodeField(&system->fpu);
     break;
   case 0b01000: // Floor
     floorZFPU(&system->fpu);
 
     system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
     system->fpu.timer.interrupt.hasInterrupt = true;
-
-    resetFPUControlOPCodeField(&system->fpu);
     break;
   case 0b01001: // Round
     roundZFPU(&system->fpu);
 
     system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
     system->fpu.timer.interrupt.hasInterrupt = true;
-
-    resetFPUControlOPCodeField(&system->fpu);
     break;
   default:
     setFPUControlSTField(&system->fpu, true);
-
-    resetFPUControlOPCodeField(&system->fpu);
   }
+  resetFPUControlOPCodeField(&system->fpu);
 }
 
 void addFPU(FPU *fpu)
 {
-  float z = fpu->registers.x.u + fpu->registers.y.u;
+  float z = fpu->registers.x.f + fpu->registers.y.f;
   fpu->registers.z.f = z;
   fpu->registers.z.u = convertToIEEE754(&z);
 }
 
 void subtractFPU(FPU *fpu)
 {
-  float z = fpu->registers.x.u - fpu->registers.y.u;
+  float z = fpu->registers.x.f - fpu->registers.y.f;
   fpu->registers.z.f = z;
   fpu->registers.z.u = convertToIEEE754(&z);
 }
 
 void multiplyFPU(FPU *fpu)
 {
-  float z = fpu->registers.x.u * fpu->registers.y.u;
+  float z = fpu->registers.x.f * fpu->registers.y.f;
   fpu->registers.z.f = z;
   fpu->registers.z.u = convertToIEEE754(&z);
 }
@@ -696,7 +677,7 @@ void divideFPU(FPU *fpu)
 {
   if (fpu->registers.y.f != 0 && fpu->registers.y.u != 0)
   {
-    float z = fpu->registers.x.u / fpu->registers.y.u;
+    float z = fpu->registers.x.f / fpu->registers.y.f;
     fpu->registers.z.f = z;
     fpu->registers.z.u = convertToIEEE754(&z);
   }
@@ -706,11 +687,13 @@ void divideFPU(FPU *fpu)
 
 void assignXFromZFPU(FPU *fpu)
 {
+  fpu->registers.x.f = fpu->registers.z.f;
   fpu->registers.x.u = fpu->registers.z.u;
 }
 
 void assignYFromZFPU(FPU *fpu)
 {
+  fpu->registers.y.f = fpu->registers.z.f;
   fpu->registers.y.u = fpu->registers.z.u;
 }
 
@@ -786,13 +769,15 @@ void handleFPUErrors(System *system, FILE *output)
   }
 }
 
-void setFPUTimerVariableCycle(FPUTimer *timer, uint32_t newCounterValue)
+void setFPUTimerVariableCycle(System *system)
 {
-  timer->interrupt.code = HARDWARE3_INTERRUPT_ADDR;
-  timer->counter = newCounterValue;
+  uint32_t x = convertToIEEE754(&system->fpu.registers.x.f);
+  uint32_t y = convertToIEEE754(&system->fpu.registers.y.f);
 
-  timer->enabled = true;
-  timer->interrupt.hasInterrupt = false;
+  system->fpu.timer.counter = calculateExponentDifference(x, y);
+  system->fpu.timer.interrupt.code = HARDWARE3_INTERRUPT_ADDR;
+  system->fpu.timer.enabled = true;
+  system->fpu.timer.interrupt.hasInterrupt = false;
 }
 
 void decrementFPUTimer(FPUTimer *timer)
@@ -815,14 +800,14 @@ uint32_t convertToIEEE754(float *x)
   return xi;
 }
 
-uint32_t calculateExponentDifference(IEEE754 x, IEEE754 y)
+uint32_t calculateExponentDifference(uint32_t x, uint32_t y)
 {
-  int bias = 127; // Bias para IEEE 754 de 32 bits
-  int exponentX = ((x.u >> 23) & 0xFF) - bias;
-  int exponentY = ((y.u >> 23) & 0xFF) - bias;
+  const uint32_t exponentX = (x >> 23) & 0xFF;
+  const uint32_t exponentY = (y >> 23) & 0xFF;
 
   return abs(exponentX - exponentY) + 1;
 }
+
 /******************************************************
  * Arithmetic and logical operations
  *******************************************************/
@@ -2400,15 +2385,15 @@ void s32(System *system, FILE *output)
     system->watchdog.registers = system->cpu.registers[z];
     break;
   case FPU_REGISTER_X_ADDR:
-    system->fpu.registers.x.f = system->cpu.registers[z];
+    system->fpu.registers.x.f = (float)system->cpu.registers[z];
     system->fpu.registers.x.u = system->cpu.registers[z];
     break;
   case FPU_REGISTER_Y_ADDR:
-    system->fpu.registers.y.f = system->cpu.registers[z];
+    system->fpu.registers.y.f = (float)system->cpu.registers[z];
     system->fpu.registers.y.u = system->cpu.registers[z];
     break;
   case FPU_REGISTER_Z_ADDR:
-    system->fpu.registers.z.f = system->cpu.registers[z];
+    system->fpu.registers.z.f = (float)system->cpu.registers[z];
     system->fpu.registers.z.u = system->cpu.registers[z];
     break;
   case FPU_REGISTER_CONTROL_ADDR:
