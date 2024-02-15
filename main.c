@@ -650,6 +650,12 @@ void executeFPU(System *system, FILE *output)
     break;
   default:
     setFPUControlSTField(&system->fpu, true);
+
+    system->fpu.timer.counter = 1;
+    system->fpu.timer.interrupt.code = HARDWARE2_INTERRUPT_ADDR;
+    system->fpu.timer.enabled = true;
+    system->fpu.timer.interrupt.hasInterrupt = false;
+    system->fpu.previousControlStatus = true;
   }
   resetFPUControlOPCodeField(&system->fpu);
 }
@@ -684,7 +690,10 @@ void divideFPU(FPU *fpu)
     fpu->registers.z.u = convertToIEEE754(&z);
   }
   else
+  {
+    setFPUControlSTField(fpu, true);
     fpu->previousControlStatus = true;
+  }
 }
 
 void assignXFromZFPU(FPU *fpu)
@@ -753,7 +762,6 @@ void handleFPUErrors(System *system, FILE *output)
 
     system->fpu.previousControlStatus = false;
     system->fpu.timer.interrupt.hasInterrupt = false;
-    system->fpu.registers.control = 0x0000020; // RESET FPU control register
   }
 
   else if (system->fpu.timer.interrupt.hasInterrupt)
@@ -2307,7 +2315,7 @@ void s8(System *system, FILE *output)
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? system->cpu.registers[x] + i : i;
   const bool fpuControlST = getFPUControlSTField(&system->fpu);
-  const uint8_t valueRegisterZ =  system->cpu.registers[z];
+  const uint8_t valueRegisterZ = system->cpu.registers[z];
 
   switch (memoryAddress)
   {
