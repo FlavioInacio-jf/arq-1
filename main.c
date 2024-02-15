@@ -688,6 +688,7 @@ void divideFPU(FPU *fpu)
     float z = fpu->registers.x.f / fpu->registers.y.f;
     fpu->registers.z.f = z;
     fpu->registers.z.u = convertToIEEE754(&z);
+    setFPUControlSTField(fpu, false);
   }
   else
   {
