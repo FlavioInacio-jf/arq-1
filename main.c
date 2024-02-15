@@ -752,6 +752,7 @@ void handleFPUErrors(System *system, FILE *output)
     printInterruptMessage(HARDWARE2_INTERRUPT_ADDR, output);
 
     system->fpu.previousControlStatus = false;
+    system->fpu.timer.interrupt.hasInterrupt = false;
     system->fpu.registers.control = 0x0000020; // RESET FPU control register
   }
 
