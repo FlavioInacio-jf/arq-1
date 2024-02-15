@@ -2306,29 +2306,35 @@ void s8(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? system->cpu.registers[x] + i : i;
+  const bool fpuControlST = getFPUControlSTField(&system->fpu);
+  const uint8_t valueRegisterZ =  system->cpu.registers[z];
 
   switch (memoryAddress)
   {
   case FPU_REGISTER_X_ADDR:
-    system->fpu.registers.x.f = system->cpu.registers[z];
-    system->fpu.registers.x.u = system->cpu.registers[z];
+    system->fpu.registers.x.f = (float)valueRegisterZ;
+    system->fpu.registers.x.u = valueRegisterZ;
     break;
   case FPU_REGISTER_Y_ADDR:
-    system->fpu.registers.y.f = system->cpu.registers[z];
-    system->fpu.registers.y.u = system->cpu.registers[z];
+    system->fpu.registers.y.f = (float)valueRegisterZ;
+    system->fpu.registers.y.u = valueRegisterZ;
     break;
   case FPU_REGISTER_Z_ADDR:
-    system->fpu.registers.z.f = system->cpu.registers[z];
-    system->fpu.registers.z.u = system->cpu.registers[z];
+    system->fpu.registers.z.f = (float)valueRegisterZ;
+    system->fpu.registers.z.u = valueRegisterZ;
     break;
   case FPU_REGISTER_CONTROL_ADDR:
-    system->fpu.registers.control = system->cpu.registers[z];
+    system->fpu.registers.control = valueRegisterZ;
+    setFPUControlSTField(&system->fpu, fpuControlST);
     break;
   default:
     if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
-      system->fpu.registers.control = system->cpu.registers[z];
+    {
+      system->fpu.registers.control = valueRegisterZ;
+      setFPUControlSTField(&system->fpu, fpuControlST);
+    }
     else if (memoryAddress < (NUM_REGISTERS * 1024))
-      system->memory[memoryAddress] = system->cpu.registers[z];
+      system->memory[memoryAddress] = valueRegisterZ;
   }
 
   // Instruction formatting
@@ -2336,7 +2342,7 @@ void s8(System *system, FILE *output)
   char additionalInfo[200] = {0};
 
   sprintf(instruction, "s8 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
-  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%02X", memoryAddress, formatRegisterName(z, false), system->cpu.registers[z]);
+  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%02X", memoryAddress, formatRegisterName(z, false), valueRegisterZ);
 
   // Output
   printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
