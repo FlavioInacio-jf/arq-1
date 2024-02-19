@@ -59,6 +59,7 @@
 
 // Terminal
 #define TERMINAL_OUT_ADDRESS 0x8888888B
+#define TERMINAL_IN_ADDRESS 0x8888888A
 
 /******************************************************
  * Types
@@ -2286,6 +2287,9 @@ void l8(System *system, FILE *output)
   {
     switch (memoryAddress)
     {
+    case TERMINAL_IN_ADDRESS:
+      system->cpu.registers[z] = (system->terminal.registers >> 8) & 0x000000FF;
+      break;
     case FPU_REGISTER_X_ADDR:
       system->cpu.registers[z] = system->fpu.registers.x.u;
       break;
