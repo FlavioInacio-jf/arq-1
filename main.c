@@ -164,9 +164,9 @@ void mul(CPU *cpu, FILE *output);
 void sll(CPU *cpu, FILE *output);
 void muls(CPU *cpu, FILE *output);
 void sla(CPU *cpu, FILE *output);
-void divv(CPU *cpu, FILE *output);
+void divv(System *system, FILE *output);
 void srl(CPU *cpu, FILE *output);
-void divs(CPU *cpu, FILE *output);
+void divs(System *system, FILE *output);
 void sra(CPU *cpu, FILE *output);
 void cmp(CPU *cpu, FILE *output);
 void and (CPU * cpu, FILE *output);
@@ -376,13 +376,13 @@ void decodeInstructions(System *system, FILE *output)
           sla(&system->cpu, output);
           break;
         case 0b100: // div
-          divv(&system->cpu, output);
+          divv(system, output);
           break;
         case 0b101: // srl
           srl(&system->cpu, output);
           break;
         case 0b110: // divs
-          divs(&system->cpu, output);
+          divs(system, output);
           break;
         case 0b111: // sra
           sra(&system->cpu, output);
@@ -1151,10 +1151,10 @@ void sla(CPU *cpu, FILE *output)
   printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void divv(CPU *cpu, FILE *output)
+void divv(System *system, FILE *output)
 {
   // Fetch operands
-  const uint32_t ir = cpu->registers[IR];
+  const uint32_t ir = system->cpu.registers[IR];
 
   const uint8_t z = (ir >> 21) & 0x1F;
   const uint8_t x = (ir >> 16) & 0x1F;
@@ -1162,32 +1162,32 @@ void divv(CPU *cpu, FILE *output)
   const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const uint32_t valueX = cpu->registers[x];
-  const uint32_t valueY = cpu->registers[y];
+  const uint32_t valueX = system->cpu.registers[x];
+  const uint32_t valueY = system->cpu.registers[y];
 
   if (valueY != 0)
   {
     if (z != 0)
-      cpu->registers[z] = valueX / valueY;
+      system->cpu.registers[z] = valueX / valueY;
 
     if (l != 0)
-      cpu->registers[l] = valueX % valueY;
+      system->cpu.registers[l] = valueX % valueY;
 
-    if (cpu->registers[z] == 0)
-      cpu->registers[SR] |= ZN_FLAG;
+    if (system->cpu.registers[z] == 0)
+      system->cpu.registers[SR] |= ZN_FLAG;
     else
-      cpu->registers[SR] &= ~ZN_FLAG;
+      system->cpu.registers[SR] &= ~ZN_FLAG;
 
-    if (cpu->registers[l] != 0)
-      cpu->registers[SR] |= CY_FLAG;
+    if (system->cpu.registers[l] != 0)
+      system->cpu.registers[SR] |= CY_FLAG;
     else
-      cpu->registers[SR] &= ~CY_FLAG;
+      system->cpu.registers[SR] &= ~CY_FLAG;
   }
 
   if (valueY == 0)
-    cpu->registers[SR] |= ZD_FLAG;
+    system->cpu.registers[SR] |= ZD_FLAG;
   else
-    cpu->registers[SR] &= ~ZD_FLAG;
+    system->cpu.registers[SR] &= ~ZD_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1195,10 +1195,13 @@ void divv(CPU *cpu, FILE *output)
 
   sprintf(instruction, "div %s,%s,%s,%s",
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
+  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), system->cpu.registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), system->cpu.registers[z], system->cpu.registers[SR]);
 
   // Output
-  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
+
+  if (valueY == 0)
+    handleDivideByZero(system, output);
 }
 
 void srl(CPU *cpu, FILE *output)
@@ -1247,10 +1250,10 @@ void srl(CPU *cpu, FILE *output)
   printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void divs(CPU *cpu, FILE *output)
+void divs(System *system, FILE *output)
 {
   // Fetch operands
-  const uint32_t ir = cpu->registers[IR];
+  const uint32_t ir = system->cpu.registers[IR];
 
   const uint8_t z = (ir >> 21) & 0x1F;
   const uint8_t x = (ir >> 16) & 0x1F;
@@ -1258,32 +1261,32 @@ void divs(CPU *cpu, FILE *output)
   const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const int32_t valueX = cpu->registers[x];
-  const int32_t valueY = cpu->registers[y];
+  const int32_t valueX = system->cpu.registers[x];
+  const int32_t valueY = system->cpu.registers[y];
 
   if (valueY != 0)
   {
     if (l != 0)
-      cpu->registers[l] = valueX % valueY;
+      system->cpu.registers[l] = valueX % valueY;
 
     if (z != 0)
-      cpu->registers[z] = valueX / valueY;
+      system->cpu.registers[z] = valueX / valueY;
 
-    if (cpu->registers[z] == 0)
-      cpu->registers[SR] |= ZN_FLAG;
+    if (system->cpu.registers[z] == 0)
+      system->cpu.registers[SR] |= ZN_FLAG;
     else
-      cpu->registers[SR] &= ~ZN_FLAG;
+      system->cpu.registers[SR] &= ~ZN_FLAG;
 
-    if (cpu->registers[l] != 0)
-      cpu->registers[SR] |= OV_FLAG;
+    if (system->cpu.registers[l] != 0)
+      system->cpu.registers[SR] |= OV_FLAG;
     else
-      cpu->registers[SR] &= ~OV_FLAG;
+      system->cpu.registers[SR] &= ~OV_FLAG;
   }
 
   if (valueY == 0)
-    cpu->registers[SR] |= ZD_FLAG;
+    system->cpu.registers[SR] |= ZD_FLAG;
   else
-    cpu->registers[SR] &= ~ZD_FLAG;
+    system->cpu.registers[SR] &= ~ZD_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1291,10 +1294,13 @@ void divs(CPU *cpu, FILE *output)
 
   sprintf(instruction, "divs %s,%s,%s,%s",
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
+  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), system->cpu.registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), system->cpu.registers[z], system->cpu.registers[SR]);
 
   // Output
-  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
+
+  if (valueY == 0)
+    handleDivideByZero(system, output);
 }
 
 void sra(CPU *cpu, FILE *output)
@@ -2810,8 +2816,8 @@ void handlePrepareForISR(System *system)
 
 void handleDivideByZero(System *system, FILE *output)
 {
-  system->control.pcAlreadyIncremented = true;
   handlePrepareForISR(system);
+  system->control.pcAlreadyIncremented = true;
 
   system->cpu.registers[SR] |= ZD_FLAG;
   if (isIESet(&system->cpu))
@@ -2827,8 +2833,8 @@ void handleDivideByZero(System *system, FILE *output)
 
 void handleInvalidInstruction(System *system, FILE *output)
 {
-  system->control.pcAlreadyIncremented = true;
   handlePrepareForISR(system);
+  system->control.pcAlreadyIncremented = true;
 
   system->cpu.registers[CR] = (system->cpu.registers[IR] >> 26) & 0x3F;
   system->cpu.registers[IPC] = system->cpu.registers[PC];
