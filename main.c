@@ -57,6 +57,9 @@
 
 #define FPU_CONTROL_ST_MASK 0x00000020
 
+// Terminal
+#define TERMINAL_OUT_ADDRESS 0x8888888B
+
 /******************************************************
  * Types
  *******************************************************/
@@ -152,6 +155,7 @@ void decodeInstructions(System *system, FILE *output);
 void initTerminalBuffer(TerminalBuffer *buffer, size_t initialCapacity);
 void addToBuffer(TerminalBuffer *buffer, char character);
 void freeBuffer(TerminalBuffer *buffer);
+void printTerminal(TerminalBuffer *buffer, FILE *output);
 
 void updateWatchdog(System *system, FILE *output);
 
@@ -322,6 +326,9 @@ void initializeSystem(System *system, FILE *input, FILE *output)
   system->control.interrupt.hasInterrupt = false;
 
   decodeInstructions(system, output);
+
+  // Terminal
+  printTerminal(&system->terminal.buffer, output);
 
   fclose(input);
   fclose(output);
@@ -562,10 +569,6 @@ void decodeInstructions(System *system, FILE *output)
 
     system->control.pcAlreadyIncremented = false;
   }
-
-  // Output formatting to file
-  fprintf(output, "[END OF SIMULATION]\n");
-  printf("[END OF SIMULATION]\n");
 }
 
 /******************************************************
@@ -604,6 +607,22 @@ void freeBuffer(TerminalBuffer *buffer)
   buffer->data = NULL;
   buffer->size = 0;
   buffer->capacity = 0;
+}
+
+void printTerminal(TerminalBuffer *buffer, FILE *output)
+{
+  if (buffer->size > 0)
+  {
+    printf("[TERMINAL]\n");
+    printf("%s\n", buffer->data);
+
+    fprintf(output, "[TERMINAL]\n");
+    fprintf(output, "%s\n", buffer->data);
+  }
+
+  // Output formatting to file
+  fprintf(output, "[END OF SIMULATION]\n");
+  printf("[END OF SIMULATION]\n");
 }
 
 /******************************************************
@@ -2388,6 +2407,12 @@ void s8(System *system, FILE *output)
 
   switch (memoryAddress)
   {
+  case TERMINAL_OUT_ADDRESS:
+    system->terminal.registers &= 0xFFFFFF00; // CLEAN OUT
+    system->terminal.registers |= valueRegisterZ;
+
+    addToBuffer(&system->terminal.buffer, valueRegisterZ);
+    break;
   case FPU_REGISTER_X_ADDR:
     system->fpu.registers.x.f = (float)valueRegisterZ;
     system->fpu.registers.x.u = valueRegisterZ;
