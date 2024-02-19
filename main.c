@@ -118,12 +118,26 @@ typedef struct
   uint32_t oldPC;
 } Control;
 
+typedef struct
+{
+  char *data;
+  size_t size;
+  size_t capacity;
+} TerminalBuffer;
+
+typedef struct
+{
+  uint32_t registers;
+  TerminalBuffer buffer;
+} Terminal;
+
 typedef struct TSystem
 {
   CPU cpu;
   FPU fpu;
   Watchdog watchdog;
   uint8_t *memory;
+  Terminal terminal;
 
   Control control;
 } System;
@@ -134,6 +148,10 @@ typedef struct TSystem
 void initializeSystem(System *system, FILE *input, FILE *output);
 void loadMemoryFromFile(System *system, FILE *input); // Load memory vector from a file
 void decodeInstructions(System *system, FILE *output);
+
+void initTerminalBuffer(TerminalBuffer *buffer, size_t initialCapacity);
+void addToBuffer(TerminalBuffer *buffer, char character);
+void freeBuffer(TerminalBuffer *buffer);
 
 void updateWatchdog(System *system, FILE *output);
 
@@ -283,6 +301,10 @@ void initializeSystem(System *system, FILE *input, FILE *output)
   // Reset FPU controller
   system->fpu.previousControlStatus = false;
 
+  // Reset TERMINAL
+  system->terminal.registers = 0;
+  initTerminalBuffer(&system->terminal.buffer, 1024);
+
   // Reset FPU timer
   system->fpu.timer.counter = 0;
   system->fpu.timer.enabled = false;
@@ -304,6 +326,7 @@ void initializeSystem(System *system, FILE *input, FILE *output)
   fclose(input);
   fclose(output);
   free(system->memory);
+  freeBuffer(&system->terminal.buffer);
 }
 
 void loadMemoryFromFile(System *system, FILE *input)
@@ -546,8 +569,47 @@ void decodeInstructions(System *system, FILE *output)
 }
 
 /******************************************************
+ * Terminal
+ *******************************************************/
+
+void initTerminalBuffer(TerminalBuffer *buffer, size_t initialCapacity)
+{
+  buffer->data = (char *)malloc(initialCapacity * sizeof(char));
+  buffer->size = 0;
+  buffer->capacity = (buffer->data != NULL) ? initialCapacity : 0;
+}
+
+void addToBuffer(TerminalBuffer *buffer, char character)
+{
+  if (buffer->size == buffer->capacity)
+  {
+    size_t newCapacity = (buffer->capacity == 0) ? 1 : 2 * buffer->capacity;
+    buffer->data = (char *)realloc(buffer->data, newCapacity * sizeof(char));
+
+    if (buffer->data != NULL)
+      buffer->capacity = newCapacity;
+    else
+    {
+      fprintf(stderr, "Failed to allocate memory for buffer.\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  buffer->data[buffer->size++] = character;
+}
+
+void freeBuffer(TerminalBuffer *buffer)
+{
+  free(buffer->data);
+  buffer->data = NULL;
+  buffer->size = 0;
+  buffer->capacity = 0;
+}
+
+/******************************************************
  * Watchdog
  *******************************************************/
+
 void updateWatchdog(System *system, FILE *output)
 {
   const int32_t en = system->watchdog.registers & 0x80000000;
