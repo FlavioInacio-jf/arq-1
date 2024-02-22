@@ -112,7 +112,7 @@
 
     // START OF WHILE
     cmpi r11, 100
-    beq 8
+    beq 12
 
     // READING BYTE FROM ARRAY
     l8 r3, [r10]
@@ -120,7 +120,11 @@
     // WRITE TO TERMINAL
     s8 [r2], r3
 
-    // ADD SPACE CARACTER
+    // ADD SPACE EVERY 4 BYTES
+    mov sr, 0
+    modi r12, r11, 4
+    cmpi r12, 0
+    bne 3
     mov r3, space
     l8 r3, [r3]
     s8 [r2], r3
@@ -129,7 +133,7 @@
     addi r11, r11, 1
 
     // REPEAT THE INTERATION
-    bun -10
+    bun -14
 
     mov sr, 0
     ret
