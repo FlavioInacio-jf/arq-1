@@ -41,7 +41,7 @@
 
     // START OF WHILE
     cmpi r11, 100
-    beq 5
+    beq 8
 
     // READING BYTE FROM ARRAY
     l8 r3, [r10]
@@ -49,11 +49,16 @@
     // WRITE TO TERMINAL
     s8 [r2], r3
 
+    // ADD SPACE CARACTER
+    mov r3, space
+    l8 r3, [r3]
+    s8 [r2], r3
+
     addi r10, r10, 1
     addi r11, r11, 1
 
     // REPEAT THE INTERATION
-    bun -7
+    bun -10
 
     mov sr, 0
     ret
@@ -73,8 +78,10 @@
 		int 0
 .data
 	unorderedNumbers:
-    	.fill 100, 4, -1
+    .fill 100, 4, -1
 	terminalIn:
-    	.4byte 0x8888888A
+    .4byte 0x8888888A
   terminalOut:
-    	.4byte 0x8888888B
+    .4byte 0x8888888B
+  space:
+    .asciz " "
