@@ -4,11 +4,8 @@
 		bun main
 		.align 5
   readTerminal:
-    // R10 = [characters] (ARRAY POINTER)
-    mov r10, characters
-
-    // R11 = 0 (ASSIST WITH ADDRESS CALCULATION)
-    mov r11, 0
+    // R10 = [unorderedNumbers] (ARRAY POINTER)
+    mov r10, unorderedNumbers
 
     // R12 = 0 (COUNTER)
     mov r12, 0
@@ -20,12 +17,12 @@
     // R3 = 1 BYTE FROM TERMINAL
     l8 r3, [r1]
 
-    muli r11, r12, 4
-    add r10, r10, r11
+    addi r10, r10, 1
     addi r12, r12, 1
 
-    // ADD TO THE NEXT VECTOR INDEX
-    s32 [r10], r3
+    // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
+    call convertStringToNumber
+    s32 [r10], r4
 
     // REPEAT THE INTERATION
     bun -8
@@ -33,19 +30,9 @@
     mov sr, 0
     ret
   convertStringToNumber:
-    // R10 = [characters] (ARRAY POINTER)
-    mov r10, characters
-
-    // R11 = [unorderedNumbers] (ARRAY POINTER)
-    mov r11, unorderedNumbers
-
-    // START OF WHILE
-    // BYTE READING FROM ARRAY
-    l8 r3, [r10]
-
     // COMPARING WITH '\0'
     cmpi r3, 0
-    beq 43
+    beq 39
 
     // COMPARING WITH '0'
     cmpi r3, 48
@@ -115,21 +102,11 @@
     bne 5
     mov r4, 9
 
-    // ADD THE CONVERTED NUMBER TO THE NUMBER ARRAY
-    s8 [r11], r4
-
-    // ADD TO THE NEXT VECTOR INDEX
-    addi r10, r10, 1
-    addi r11, r11, 1
-
-    // REPEAT THE INTERATION
-    bun -46
-
     mov sr, 0
     ret
   printf:
-    // R10 = [characters] (ARRAY POINTER)
-    mov r10, characters
+    // R10 = [unorderedNumbers] (ARRAY POINTER)
+    mov r10, unorderedNumbers
 
     // R11 = 0 (COUNTER)
     mov r11, 0
@@ -158,6 +135,8 @@
     mov sr, 0
     ret
   orderNumbers:
+
+
     mov sr, 0
     ret
 	main:
@@ -172,13 +151,10 @@
 
     call readTerminal
     call printf
-    call convertStringToNumber
     call orderNumbers
 
 		int 0
 .data
-  characters:
-    .fill 100, 4, -1
 	unorderedNumbers:
     .fill 100, 4, -1
   orderedNumbers:
