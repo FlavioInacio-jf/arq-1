@@ -4,17 +4,30 @@
 		bun main
 		.align 5
     readTerminal:
-    	// R10 = 0 (COUNTER)
-    	mov r10, 0
-      cmpi r10, 100
-      beq 10
+    	// R10 = [unorderedNumbers] (ARRAY HEAD)
+    	mov r10, unorderedNumbers
+        // R11 = 0 (ASSIST WITH ADDRESS CALCULATION)
+        mov r11, 0
+    	// R12 = 0 (COUNTER)
+    	mov r12, 0
 
-    	// R2 = 1 BYTE FROM TERMINAL
-    	l8 r2, [r1]
+      // START OF WHILE
+      cmpi r12, 100
+      beq 6
+    	// R3 = 1 BYTE FROM TERMINAL
+    	l8 r3, [r1]
 
+      muli r11, r12, 4
+      add r10, r10, r11
+      addi r12, r12, 1
 
+      // ADD TO THE NEXT VECTOR INDEX
+      s32 [r10], r3
+
+      // REPEAT THE INTERATION
+      bun -8
+      mov sr, 0
       ret
-
 	main:
     // R10 = [unorderedNumbers] (ARRAY HEAD)
     mov r10, unorderedNumbers
