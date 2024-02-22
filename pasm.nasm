@@ -4,8 +4,8 @@
 		bun main
 		.align 5
   readTerminal:
-    // R10 = [unorderedNumbers] (ARRAY HEAD)
-    mov r10, unorderedNumbers
+    // R10 = [characters] (ARRAY POINTER)
+    mov r10, characters
 
     // R11 = 0 (ASSIST WITH ADDRESS CALCULATION)
     mov r11, 0
@@ -32,9 +32,104 @@
 
     mov sr, 0
     ret
+  convertStringToNumber:
+    // R10 = [characters] (ARRAY POINTER)
+    mov r10, characters
+
+    // R11 = [unorderedNumbers] (ARRAY POINTER)
+    mov r11, unorderedNumbers
+
+    // START OF WHILE
+    // BYTE READING FROM ARRAY
+    l8 r3, [r10]
+
+    // COMPARING WITH '\0'
+    cmpi r3, 0
+    beq 43
+
+    // COMPARING WITH '0'
+    cmpi r3, 48
+    bne 2
+    mov r4, 0
+    // BREAK
+    bun 35
+
+    // COMPARING WITH '1'
+    cmpi r3, 49
+    bne 2
+    mov r4, 1
+    // BREAK
+    bun 31
+
+    // COMPARING WITH '2'
+    cmpi r3, 50
+    bne 2
+    mov r4, 2
+    // BREAK
+    bun 27
+
+    // COMPARING WITH '3'
+    cmpi r3, 51
+    bne 2
+    mov r4, 3
+    // BREAK
+    bun 23
+
+    // COMPARING WITH '4'
+    cmpi r3, 52
+    bne 2
+    mov r4, 4
+    // BREAK
+    bun 19
+
+    // COMPARING WITH '5'
+    cmpi r3, 53
+    bne 2
+    mov r4, 5
+    // BREAK
+    bun 15
+
+    // COMPARING WITH '6'
+    cmpi r3, 54
+    bne 2
+    mov r4, 6
+    // BREAK
+    bun 11
+
+    // COMPARING WITH '7'
+    cmpi r3, 55
+    bne 2
+    mov r4, 7
+    // BREAK
+    bun 7
+
+    // COMPARING WITH '8'
+    cmpi r3, 56
+    bne 2
+    mov r4, 8
+    // BREAK
+    bun 3
+
+    // COMPARING WITH '9'
+    cmpi r3, 57
+    bne 5
+    mov r4, 9
+
+    // ADD THE CONVERTED NUMBER TO THE NUMBER ARRAY
+    s8 [r11], r4
+
+    // ADD TO THE NEXT VECTOR INDEX
+    addi r10, r10, 1
+    addi r11, r11, 1
+
+    // REPEAT THE INTERATION
+    bun -46
+
+    mov sr, 0
+    ret
   printf:
-    // R10 = [unorderedNumbers] (ARRAY HEAD)
-    mov r10, unorderedNumbers
+    // R10 = [characters] (ARRAY POINTER)
+    mov r10, characters
 
     // R11 = 0 (COUNTER)
     mov r11, 0
@@ -74,9 +169,12 @@
 
     call readTerminal
     call printf
+    call convertStringToNumber
 
 		int 0
 .data
+  characters:
+    .fill 100, 4, -1
 	unorderedNumbers:
     .fill 100, 4, -1
 	terminalIn:
