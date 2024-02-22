@@ -4,25 +4,33 @@
 		bun main
 		.align 5
   readTerminal:
-    // R10 = [unorderedNumbers] (ARRAY POINTER)
-    mov r10, unorderedNumbers
+    // R10 = [numbers] (ARRAY POINTER)
+    mov r10, numbers
 
-    // R11 = 0 (COUNTER)
-    mov r11, 0
+    // R11 = [orderedNumbers] (ARRAY POINTER)
+    mov r11, orderedNumbers
+
+    // R12 = 0 (COUNTER)
+    mov r12, 0
 
     // START OF WHILE
-    cmpi r11, 400
-    beq 5
+    cmpi r12, 400
+    beq 8
 
     // R3 = 1 BYTE FROM TERMINAL
     l8 r3, [r1]
     s8 [r10], r3
 
+    // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
+    call convertStringToNumber
+    s8 [r11], r4
+
     addi r10, r10, 1
     addi r11, r11, 1
+    addi r12, r12, 1
 
     // REPEAT THE INTERATION
-    bun -7
+    bun -10
 
     mov sr, 0
     ret
@@ -102,8 +110,8 @@
     mov sr, 0
     ret
   printf:
-    // R10 = [unorderedNumbers] (ARRAY POINTER)
-    mov r10, unorderedNumbers
+    // R10 = [numbers] (ARRAY POINTER)
+    mov r10, numbers
 
     // R11 = 0 (COUNTER)
     mov r11, 0
@@ -172,7 +180,7 @@
     call orderNumbers
 		int 0
 .data
-	unorderedNumbers:
+	numbers:
     .fill 100, 4, -1
   orderedNumbers:
     .fill 100, 4, -1
