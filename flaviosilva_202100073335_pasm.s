@@ -137,9 +137,17 @@
 
     mov sr, 0
     ret
+  printHeader:
+    l8 r11, [r10]
+    cmpi r11, 0
+    beq 3
+    s8 [r2], r11
+    addi r10, r10, 1
+    bun -6
+
+    mov sr, 0
+    ret
   orderNumbers:
-
-
     mov sr, 0
     ret
 	main:
@@ -152,7 +160,16 @@
     // R2 = TERMINAL OUT ADDRESS
     l32 r2, [terminalOut]
 
+    // PRINT HEADER INPUT
+    mov r10, headerInput
+    call printHeader
+
     call readTerminal
+
+    // PRINT HEADER SORTED NUMBERS
+    mov r10, headerOutput
+    call printHeader
+
     call printf
     call orderNumbers
 
@@ -166,5 +183,9 @@
     .4byte 0x8888888A
   terminalOut:
     .4byte 0x8888888B
+  headerInput:
+    .asciz "Input numbers:\n"
+  headerOutput:
+    .asciz "Sorted numbers:\n"
   space:
     .asciz " "
