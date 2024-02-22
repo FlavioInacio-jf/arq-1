@@ -157,6 +157,9 @@
 
     mov sr, 0
     ret
+  orderNumbers:
+    mov sr, 0
+    ret
 	main:
     // SP = 32KiB
 		mov sp, 0x7FFC
@@ -170,12 +173,15 @@
     call readTerminal
     call printf
     call convertStringToNumber
+    call orderNumbers
 
 		int 0
 .data
   characters:
     .fill 100, 4, -1
 	unorderedNumbers:
+    .fill 100, 4, -1
+  orderedNumbers:
     .fill 100, 4, -1
 	terminalIn:
     .4byte 0x8888888A
