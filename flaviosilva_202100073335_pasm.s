@@ -11,7 +11,7 @@
     mov r11, 0
 
     // START OF WHILE
-    cmpi r11, 100
+    cmpi r11, 400
     beq 6
 
     // R3 = 1 BYTE FROM TERMINAL
@@ -111,7 +111,7 @@
     mov r11, 0
 
     // START OF WHILE
-    cmpi r11, 100
+    cmpi r11, 400
     beq 12
 
     // READING BYTE FROM ARRAY
