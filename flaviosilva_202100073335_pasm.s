@@ -98,7 +98,7 @@
 
     // COMPARING WITH '9'
     cmpi r3, 57
-    bne 5
+    bne 1
     mov r4, 9
 
     mov sr, 0
