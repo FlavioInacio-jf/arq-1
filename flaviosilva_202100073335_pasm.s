@@ -120,6 +120,9 @@
     // WRITE TO TERMINAL
     s8 [r2], r3
 
+    addi r10, r10, 1
+    addi r11, r11, 1
+
     // ADD SPACE EVERY 4 BYTES
     mov sr, 0
     modi r12, r11, 4
@@ -128,9 +131,6 @@
     mov r3, space
     l8 r3, [r3]
     s8 [r2], r3
-
-    addi r10, r10, 1
-    addi r11, r11, 1
 
     // REPEAT THE INTERATION
     bun -14
