@@ -7,22 +7,21 @@
     // R10 = [unorderedNumbers] (ARRAY POINTER)
     mov r10, unorderedNumbers
 
-    // R12 = 0 (COUNTER)
-    mov r12, 0
+    // R11 = 0 (COUNTER)
+    mov r11, 0
 
     // START OF WHILE
-    cmpi r12, 100
+    cmpi r11, 100
     beq 6
 
     // R3 = 1 BYTE FROM TERMINAL
     l8 r3, [r1]
-
-    addi r10, r10, 1
-    addi r12, r12, 1
-
     // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
     call convertStringToNumber
-    s32 [r10], r4
+    s8 [r10], r4
+
+    addi r10, r10, 1
+    addi r11, r11, 1
 
     // REPEAT THE INTERATION
     bun -8
