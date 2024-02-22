@@ -12,19 +12,17 @@
 
     // START OF WHILE
     cmpi r11, 400
-    beq 6
+    beq 5
 
     // R3 = 1 BYTE FROM TERMINAL
     l8 r3, [r1]
-    // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
-    call convertStringToNumber
-    s8 [r10], r4
+    s8 [r10], r3
 
     addi r10, r10, 1
     addi r11, r11, 1
 
     // REPEAT THE INTERATION
-    bun -8
+    bun -7
 
     mov sr, 0
     ret
@@ -165,14 +163,13 @@
     call printHeader
 
     call readTerminal
+    call printf
 
     // PRINT HEADER SORTED NUMBERS
     mov r10, headerOutput
     call printHeader
 
-    call printf
     call orderNumbers
-
 		int 0
 .data
 	unorderedNumbers:
