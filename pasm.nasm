@@ -6,8 +6,8 @@
     readTerminal:
     	// R10 = [unorderedNumbers] (ARRAY HEAD)
     	mov r10, unorderedNumbers
-        // R11 = 0 (ASSIST WITH ADDRESS CALCULATION)
-        mov r11, 0
+      // R11 = 0 (ASSIST WITH ADDRESS CALCULATION)
+      mov r11, 0
     	// R12 = 0 (COUNTER)
     	mov r12, 0
 
