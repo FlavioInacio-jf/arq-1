@@ -2908,18 +2908,16 @@ void handlePrepareForISR(System *system)
 void handleDivideByZero(System *system, FILE *output)
 {
   handlePrepareForISR(system);
-  system->control.pcAlreadyIncremented = true;
 
-  system->cpu.registers[SR] |= ZD_FLAG;
   if (isIESet(&system->cpu))
   {
-    system->cpu.registers[SR] |= ZD_FLAG;
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[CR] = 0;
     system->cpu.registers[IPC] = system->cpu.registers[PC];
     system->cpu.registers[PC] = DIVIDE_BY_ZERO_ADDR;
-  }
 
-  printInterruptMessage(DIVIDE_BY_ZERO_ADDR, output);
+    printInterruptMessage(DIVIDE_BY_ZERO_ADDR, output);
+  }
 }
 
 void handleInvalidInstruction(System *system, FILE *output)
