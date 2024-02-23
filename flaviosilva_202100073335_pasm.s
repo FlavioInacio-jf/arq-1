@@ -154,17 +154,35 @@
     mov sr, 0
     ret
   orderNumbers:
-    // R10 = [orderedNumbers] (ARRAY POINTER)
+    // HEADER ARRAY
     mov r10, numbers
 
-    // ASSISTANT POINTER
-    mov r11, numbers
-    
-    // HEADER ARRAY
-    mov r12, numbers
+    // I ARRAY
+    mov r11, 0
 
-    // TAIL ARRAY
-    mov r12, numbers
+    // WHILE
+    cmp r10, 100
+    beq x
+    // I LESS
+    l32 r12, [numbers]
+
+    // WHILE
+    mov r14, 0
+    addi r14, r10, 1
+    cmp r14, r10
+    beq x
+
+    cmp r14, r12
+    bgt x
+    mov r12, r11
+    
+
+    addi r14, r14, 1
+
+    addi r11, 1
+
+    // REPEAT THE INTERATION
+    bun -14
 
     mov sr, 0
     ret
