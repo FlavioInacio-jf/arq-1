@@ -2907,10 +2907,10 @@ void handlePrepareForISR(System *system)
 
 void handleDivideByZero(System *system, FILE *output)
 {
-  handlePrepareForISR(system);
 
   if (isIESet(&system->cpu))
   {
+    handlePrepareForISR(system);
     system->control.pcAlreadyIncremented = true;
     system->cpu.registers[CR] = 0;
     system->cpu.registers[IPC] = system->cpu.registers[PC];
