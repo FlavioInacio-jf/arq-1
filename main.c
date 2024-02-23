@@ -864,13 +864,16 @@ void handleFPUErrors(System *system, FILE *output)
 
 void setFPUTimerVariableCycle(System *system)
 {
-  uint32_t x = convertToIEEE754(&system->fpu.registers.x.f);
-  uint32_t y = convertToIEEE754(&system->fpu.registers.y.f);
+  if (!system->fpu.timer.enabled)
+  {
+    uint32_t x = convertToIEEE754(&system->fpu.registers.x.f);
+    uint32_t y = convertToIEEE754(&system->fpu.registers.y.f);
 
-  system->fpu.timer.counter = calculateExponentDifference(x, y);
-  system->fpu.timer.interrupt.code = HARDWARE3_INTERRUPT_ADDR;
-  system->fpu.timer.enabled = true;
-  system->fpu.timer.interrupt.hasInterrupt = false;
+    system->fpu.timer.counter = calculateExponentDifference(x, y);
+    system->fpu.timer.interrupt.code = HARDWARE3_INTERRUPT_ADDR;
+    system->fpu.timer.enabled = true;
+    system->fpu.timer.interrupt.hasInterrupt = false;
+  }
 }
 
 void decrementFPUTimer(FPUTimer *timer)
