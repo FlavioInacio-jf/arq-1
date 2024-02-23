@@ -154,6 +154,18 @@
     mov sr, 0
     ret
   orderNumbers:
+    // R10 = [orderedNumbers] (ARRAY POINTER)
+    mov r10, numbers
+
+    // ASSISTANT POINTER
+    mov r11, numbers
+    
+    // HEADER ARRAY
+    mov r12, numbers
+
+    // TAIL ARRAY
+    mov r12, numbers
+
     mov sr, 0
     ret
 	main:
