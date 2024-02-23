@@ -670,11 +670,10 @@ void updateWatchdog(System *system, FILE *output)
 
 void executeFPU(System *system, FILE *output)
 {
-  const uint8_t opcode = system->fpu.registers.control & 0x1F;
-
   decrementFPUTimer(&system->fpu.timer);
 
   handleFPUErrors(system, output); // Dealing with interruptions
+  const uint8_t opcode = system->fpu.registers.control & 0x1F;
 
   switch (opcode)
   {
@@ -739,7 +738,6 @@ void executeFPU(System *system, FILE *output)
     system->fpu.timer.interrupt.hasInterrupt = false;
     system->fpu.previousControlStatus = true;
   }
-  resetFPUControlOPCodeField(&system->fpu);
 }
 
 void addFPU(FPU *fpu)
@@ -765,16 +763,14 @@ void multiplyFPU(FPU *fpu)
 
 void divideFPU(FPU *fpu)
 {
-  if (fpu->registers.y.f != 0 && fpu->registers.y.u != 0)
+  if (fpu->registers.y.f != 0)
   {
     float z = fpu->registers.x.f / fpu->registers.y.f;
     fpu->registers.z.f = z;
     fpu->registers.z.u = convertToIEEE754(&z);
-    setFPUControlSTField(fpu, false);
   }
   else
   {
-    setFPUControlSTField(fpu, true);
     fpu->previousControlStatus = true;
   }
 }
@@ -845,6 +841,9 @@ void handleFPUErrors(System *system, FILE *output)
 
     system->fpu.previousControlStatus = false;
     system->fpu.timer.interrupt.hasInterrupt = false;
+
+    resetFPUControlOPCodeField(&system->fpu);
+    setFPUControlSTField(&system->fpu, true);
   }
 
   else if (system->fpu.timer.interrupt.hasInterrupt)
@@ -859,7 +858,7 @@ void handleFPUErrors(System *system, FILE *output)
     printInterruptMessage(system->fpu.timer.interrupt.code, output);
 
     system->fpu.timer.interrupt.hasInterrupt = false;
-    system->fpu.registers.control = 0x0000000;
+    resetFPUControlOPCodeField(&system->fpu);
   }
 }
 
