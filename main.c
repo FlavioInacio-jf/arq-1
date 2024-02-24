@@ -2,12 +2,13 @@
  * Libraries
  *******************************************************/
 
-#include <stdint.h> // Integer types with specific widths.
-#include <stdlib.h> // General-purpose functions, including memory allocation and random number generation.
-#include <stdio.h>  // Standard Input/Output library for input and output operations.
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <math.h>
 
 /******************************************************
  * Utility Constants
@@ -45,57 +46,105 @@
 
 // Interrupt codes
 #define HARDWARE1_INTERRUPT_CODE 0xE1AC04DA
+#define FPU_INTERRUPT_CODE 0x01EEE754
+
+// FPU
+#define FPU_REGISTER_X_ADDR 0x80808880
+#define FPU_REGISTER_Y_ADDR 0x80808884
+#define FPU_REGISTER_Z_ADDR 0x80808888
+#define FPU_REGISTER_CONTROL_ADDR 0x8080888C
+#define FPU_REGISTER_CONTROL_ADDR_OTHER 0x8080888F
+
+#define FPU_CONTROL_ST_MASK 0x00000020
+
+// Terminal
+#define TERMINAL_OUT_ADDRESS 0x8888888B
+#define TERMINAL_IN_ADDRESS 0x8888888A
 
 /******************************************************
  * Types
  *******************************************************/
 
-struct TCPU
+typedef struct
+{
+  float f;
+  uint32_t u;
+} FPUOperand;
+
+typedef struct
 {
   uint32_t registers[NUM_REGISTERS];
-};
-typedef struct TCPU CPU;
+} CPU;
 
-struct FPU
-{
-};
-
-struct TWatchdog
-{
-  int32_t registers;
-};
-typedef struct TWatchdog Watchdog;
-
-struct DMA
-{
-};
-
-struct TInterrupt
+typedef struct
 {
   bool hasInterrupt;
-};
-typedef struct TInterrupt Interrupt;
+  uint32_t code;
+} FPUInterrupt;
 
-struct TControl
+typedef struct
+{
+  uint32_t counter;
+  bool enabled;
+  FPUInterrupt interrupt;
+} FPUTimer;
+
+typedef struct
+{
+  FPUOperand x;
+  FPUOperand y;
+  FPUOperand z;
+  uint32_t control;
+} FPURegister;
+
+typedef struct
+{
+  FPURegister registers;
+  FPUTimer timer;
+  bool previousControlStatus;
+} FPU;
+
+typedef struct
+{
+  int32_t registers;
+} Watchdog;
+
+typedef struct
+{
+  bool hasInterrupt;
+} Interrupt;
+
+typedef struct
 {
   bool run;
   bool pcAlreadyIncremented;
   Interrupt interrupt;
-};
-typedef struct TControl Control;
+  uint32_t oldPC;
+} Control;
 
-struct TSystem
+typedef struct
+{
+  char *data;
+  size_t size;
+  size_t capacity;
+} TerminalBuffer;
+
+typedef struct
+{
+  uint32_t registers;
+  TerminalBuffer buffer;
+} Terminal;
+
+typedef struct TSystem
 {
   CPU cpu;
-  struct FPU fpu;
+  FPU fpu;
   Watchdog watchdog;
-  struct DMA dma;
   uint8_t *memory;
+  Terminal terminal;
 
   Control control;
-};
-
-typedef struct TSystem System;
+} System;
 
 /******************************************************
  * Functin Signature
@@ -104,7 +153,31 @@ void initializeSystem(System *system, FILE *input, FILE *output);
 void loadMemoryFromFile(System *system, FILE *input); // Load memory vector from a file
 void decodeInstructions(System *system, FILE *output);
 
+void initTerminalBuffer(TerminalBuffer *buffer, size_t initialCapacity);
+void addToBuffer(TerminalBuffer *buffer, char character);
+void freeBuffer(TerminalBuffer *buffer);
+void printTerminal(TerminalBuffer *buffer, FILE *output);
+
 void updateWatchdog(System *system, FILE *output);
+
+void executeFPU(System *system, FILE *output);
+void addFPU(FPU *fpu);
+void subtractFPU(FPU *fpu);
+void multiplyFPU(FPU *fpu);
+void divideFPU(FPU *fpu);
+void assignXFromZFPU(FPU *fpu);
+void assignYFromZFPU(FPU *fpu);
+void ceilingZFPU(FPU *fpu);
+void floorZFPU(FPU *fpu);
+void roundZFPU(FPU *fpu);
+bool getFPUControlSTField(FPU *fpu);
+void setFPUControlSTField(FPU *fpu, bool enable);
+void resetFPUControlOPCodeField(FPU *fpu);
+void handleFPUErrors(System *system, FILE *output);
+void setFPUTimerVariableCycle(System *system);
+void decrementFPUTimer(FPUTimer *timer);
+uint32_t convertToIEEE754(float *x);
+uint32_t calculateExponentDifference(uint32_t x, uint32_t y);
 
 void mov(CPU *cpu, FILE *output);
 void movs(CPU *cpu, FILE *output);
@@ -114,9 +187,9 @@ void mul(CPU *cpu, FILE *output);
 void sll(CPU *cpu, FILE *output);
 void muls(CPU *cpu, FILE *output);
 void sla(CPU *cpu, FILE *output);
-void divv(CPU *cpu, FILE *output);
+void divv(System *system, FILE *output);
 void srl(CPU *cpu, FILE *output);
-void divs(CPU *cpu, FILE *output);
+void divs(System *system, FILE *output);
 void sra(CPU *cpu, FILE *output);
 void cmp(CPU *cpu, FILE *output);
 void and (CPU * cpu, FILE *output);
@@ -219,6 +292,30 @@ void initializeSystem(System *system, FILE *input, FILE *output)
   // watchdog
   system->watchdog.registers = 0;
 
+  // Reset FPU registers
+  system->fpu.registers.control = 0;
+  system->fpu.registers.x.f = 0;
+  system->fpu.registers.x.u = 0;
+
+  system->fpu.registers.y.f = 0;
+  system->fpu.registers.y.u = 0;
+
+  system->fpu.registers.z.f = 0;
+  system->fpu.registers.z.u = 0;
+
+  // Reset FPU controller
+  system->fpu.previousControlStatus = false;
+
+  // Reset TERMINAL
+  system->terminal.registers = 0;
+  initTerminalBuffer(&system->terminal.buffer, 1024);
+
+  // Reset FPU timer
+  system->fpu.timer.counter = 0;
+  system->fpu.timer.enabled = false;
+  system->fpu.timer.interrupt.code = 0;
+  system->fpu.timer.interrupt.hasInterrupt = false;
+
   // 32 KiB memory initialized to zero
   system->memory = (uint8_t *)(calloc(32 * 1024, sizeof(uint8_t)));
 
@@ -231,9 +328,13 @@ void initializeSystem(System *system, FILE *input, FILE *output)
 
   decodeInstructions(system, output);
 
+  // Terminal
+  printTerminal(&system->terminal.buffer, output);
+
   fclose(input);
   fclose(output);
   free(system->memory);
+  freeBuffer(&system->terminal.buffer);
 }
 
 void loadMemoryFromFile(System *system, FILE *input)
@@ -265,7 +366,9 @@ void decodeInstructions(System *system, FILE *output)
 
   while (system->control.run)
   {
+
     const uint32_t ir = readMemory32(system, system->cpu.registers[PC]);
+    system->control.oldPC = system->cpu.registers[PC];
 
     system->cpu.registers[IR] = ir;
 
@@ -304,13 +407,13 @@ void decodeInstructions(System *system, FILE *output)
           sla(&system->cpu, output);
           break;
         case 0b100: // div
-          divv(&system->cpu, output);
+          divv(system, output);
           break;
         case 0b101: // srl
           srl(&system->cpu, output);
           break;
         case 0b110: // divs
-          divs(&system->cpu, output);
+          divs(system, output);
           break;
         case 0b111: // sra
           sra(&system->cpu, output);
@@ -460,10 +563,62 @@ void decodeInstructions(System *system, FILE *output)
 
     updateWatchdog(system, output); // Update the timer every instruction cycle
 
+    executeFPU(system, output); // FPU
+
     if (!system->control.pcAlreadyIncremented)
       system->cpu.registers[PC] += 4; // next instruction
 
     system->control.pcAlreadyIncremented = false;
+  }
+}
+
+/******************************************************
+ * Terminal
+ *******************************************************/
+
+void initTerminalBuffer(TerminalBuffer *buffer, size_t initialCapacity)
+{
+  buffer->data = (char *)malloc(initialCapacity * sizeof(char));
+  buffer->size = 0;
+  buffer->capacity = (buffer->data != NULL) ? initialCapacity : 0;
+}
+
+void addToBuffer(TerminalBuffer *buffer, char character)
+{
+  if (buffer->size == buffer->capacity)
+  {
+    size_t newCapacity = (buffer->capacity == 0) ? 1 : 2 * buffer->capacity;
+    buffer->data = (char *)realloc(buffer->data, newCapacity * sizeof(char));
+
+    if (buffer->data != NULL)
+      buffer->capacity = newCapacity;
+    else
+    {
+      fprintf(stderr, "Failed to allocate memory for buffer.\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  buffer->data[buffer->size++] = character;
+}
+
+void freeBuffer(TerminalBuffer *buffer)
+{
+  free(buffer->data);
+  buffer->data = NULL;
+  buffer->size = 0;
+  buffer->capacity = 0;
+}
+
+void printTerminal(TerminalBuffer *buffer, FILE *output)
+{
+  if (buffer->size > 0)
+  {
+    printf("[TERMINAL]\n");
+    printf("%s\n", buffer->data);
+
+    fprintf(output, "[TERMINAL]\n");
+    fprintf(output, "%s\n", buffer->data);
   }
 
   // Output formatting to file
@@ -474,6 +629,7 @@ void decodeInstructions(System *system, FILE *output)
 /******************************************************
  * Watchdog
  *******************************************************/
+
 void updateWatchdog(System *system, FILE *output)
 {
   const int32_t en = system->watchdog.registers & 0x80000000;
@@ -499,13 +655,253 @@ void updateWatchdog(System *system, FILE *output)
 
     system->control.pcAlreadyIncremented = true;
     system->control.interrupt.hasInterrupt = false;
-    
+
     system->cpu.registers[IPC] = system->cpu.registers[PC];
     system->cpu.registers[PC] = HARDWARE1_INTERRUPT_ADDR;
     system->cpu.registers[CR] = HARDWARE1_INTERRUPT_CODE;
 
     printInterruptMessage(HARDWARE1_INTERRUPT_ADDR, output);
   }
+}
+
+/******************************************************
+ * FPU
+ *******************************************************/
+
+void executeFPU(System *system, FILE *output)
+{
+  decrementFPUTimer(&system->fpu.timer);
+
+  handleFPUErrors(system, output); // Dealing with interruptions
+  const uint8_t opcode = system->fpu.registers.control & 0x1F;
+
+  switch (opcode)
+  {
+  case 0b00000:
+    break;
+  case 0b00001: // Adition
+    addFPU(&system->fpu);
+
+    setFPUTimerVariableCycle(system);
+    break;
+  case 0b00010: // Subtraction
+    subtractFPU(&system->fpu);
+
+    setFPUTimerVariableCycle(system);
+    break;
+  case 0b00011: // Multiplication
+    multiplyFPU(&system->fpu);
+
+    setFPUTimerVariableCycle(system);
+    break;
+  case 0b00100: // Division
+    divideFPU(&system->fpu);
+
+    setFPUTimerVariableCycle(system);
+    break;
+  case 0b00101: // Assign x from z
+    assignXFromZFPU(&system->fpu);
+
+    system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+    system->fpu.timer.interrupt.hasInterrupt = true;
+    break;
+  case 0b00110: // Assign y from z
+    assignYFromZFPU(&system->fpu);
+
+    system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+    system->fpu.timer.interrupt.hasInterrupt = true;
+    break;
+  case 0b00111: // Ceiling
+    ceilingZFPU(&system->fpu);
+
+    system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+    system->fpu.timer.interrupt.hasInterrupt = true;
+    break;
+  case 0b01000: // Floor
+    floorZFPU(&system->fpu);
+
+    system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+    system->fpu.timer.interrupt.hasInterrupt = true;
+    break;
+  case 0b01001: // Round
+    roundZFPU(&system->fpu);
+
+    system->fpu.timer.interrupt.code = HARDWARE4_INTERRUPT_ADDR;
+    system->fpu.timer.interrupt.hasInterrupt = true;
+    break;
+  default:
+    setFPUControlSTField(&system->fpu, true);
+
+    system->fpu.timer.counter = 1;
+    system->fpu.timer.interrupt.code = HARDWARE2_INTERRUPT_ADDR;
+    system->fpu.timer.enabled = true;
+    system->fpu.timer.interrupt.hasInterrupt = false;
+    system->fpu.previousControlStatus = true;
+  }
+}
+
+void addFPU(FPU *fpu)
+{
+  float z = fpu->registers.x.f + fpu->registers.y.f;
+  fpu->registers.z.f = z;
+  fpu->registers.z.u = convertToIEEE754(&z);
+}
+
+void subtractFPU(FPU *fpu)
+{
+  float z = fpu->registers.x.f - fpu->registers.y.f;
+  fpu->registers.z.f = z;
+  fpu->registers.z.u = convertToIEEE754(&z);
+}
+
+void multiplyFPU(FPU *fpu)
+{
+  float z = fpu->registers.x.f * fpu->registers.y.f;
+  fpu->registers.z.f = z;
+  fpu->registers.z.u = convertToIEEE754(&z);
+}
+
+void divideFPU(FPU *fpu)
+{
+  if (fpu->registers.y.f != 0)
+  {
+    float z = fpu->registers.x.f / fpu->registers.y.f;
+    fpu->registers.z.f = z;
+    fpu->registers.z.u = convertToIEEE754(&z);
+  }
+  else
+  {
+    fpu->previousControlStatus = true;
+  }
+}
+
+void assignXFromZFPU(FPU *fpu)
+{
+  fpu->registers.x.f = fpu->registers.z.f;
+  fpu->registers.x.u = fpu->registers.z.u;
+}
+
+void assignYFromZFPU(FPU *fpu)
+{
+  fpu->registers.y.f = fpu->registers.z.f;
+  fpu->registers.y.u = fpu->registers.z.u;
+}
+
+void ceilingZFPU(FPU *fpu)
+{
+  fpu->registers.z.u = ceilf(fpu->registers.z.f);
+}
+
+void floorZFPU(FPU *fpu)
+{
+  fpu->registers.z.u = floorf(fpu->registers.z.f);
+}
+
+void roundZFPU(FPU *fpu)
+{
+  fpu->registers.z.u = roundf(fpu->registers.z.f);
+}
+
+void setFPUControlSTField(FPU *fpu, bool enable)
+{
+  if (enable)
+    fpu->registers.control |= FPU_CONTROL_ST_MASK;
+  else
+    fpu->registers.control &= ~FPU_CONTROL_ST_MASK;
+}
+
+void resetFPUControlOPCodeField(FPU *fpu)
+{
+  fpu->registers.control &= FPU_CONTROL_ST_MASK;
+}
+
+bool getFPUControlSTField(FPU *fpu)
+{
+  const uint32_t st = fpu->registers.control & FPU_CONTROL_ST_MASK;
+
+  if (st > 0)
+    return true;
+  else
+    return false;
+}
+
+void handleFPUErrors(System *system, FILE *output)
+{
+
+  if (system->fpu.previousControlStatus && system->fpu.timer.interrupt.hasInterrupt) // Error in operation (ST = 1)
+  {
+    handlePrepareForISR(system);
+    system->control.pcAlreadyIncremented = true;
+
+    system->cpu.registers[IPC] = system->control.oldPC;
+    system->cpu.registers[PC] = HARDWARE2_INTERRUPT_ADDR;
+    system->cpu.registers[CR] = FPU_INTERRUPT_CODE;
+
+    printInterruptMessage(HARDWARE2_INTERRUPT_ADDR, output);
+
+    system->fpu.previousControlStatus = false;
+    system->fpu.timer.interrupt.hasInterrupt = false;
+
+    resetFPUControlOPCodeField(&system->fpu);
+    setFPUControlSTField(&system->fpu, true);
+  }
+
+  else if (system->fpu.timer.interrupt.hasInterrupt)
+  {
+    handlePrepareForISR(system);
+    system->control.pcAlreadyIncremented = true;
+
+    system->cpu.registers[IPC] = system->control.oldPC;
+    system->cpu.registers[PC] = system->fpu.timer.interrupt.code;
+    system->cpu.registers[CR] = FPU_INTERRUPT_CODE;
+
+    printInterruptMessage(system->fpu.timer.interrupt.code, output);
+
+    system->fpu.timer.interrupt.hasInterrupt = false;
+    resetFPUControlOPCodeField(&system->fpu);
+  }
+}
+
+void setFPUTimerVariableCycle(System *system)
+{
+  if (!system->fpu.timer.enabled)
+  {
+    uint32_t x = convertToIEEE754(&system->fpu.registers.x.f);
+    uint32_t y = convertToIEEE754(&system->fpu.registers.y.f);
+
+    system->fpu.timer.counter = calculateExponentDifference(x, y);
+    system->fpu.timer.interrupt.code = HARDWARE3_INTERRUPT_ADDR;
+    system->fpu.timer.enabled = true;
+    system->fpu.timer.interrupt.hasInterrupt = false;
+  }
+}
+
+void decrementFPUTimer(FPUTimer *timer)
+{
+  if (timer->enabled && timer->counter > 0)
+  {
+    timer->counter--;
+    if (timer->counter == 0)
+    {
+      timer->enabled = false;
+      timer->interrupt.hasInterrupt = true;
+    }
+  }
+}
+
+uint32_t convertToIEEE754(float *x)
+{
+  const uint32_t xi = *((uint32_t *)x);
+
+  return xi;
+}
+
+uint32_t calculateExponentDifference(uint32_t x, uint32_t y)
+{
+  const uint32_t exponentX = (x >> 23) & 0xFF;
+  const uint32_t exponentY = (y >> 23) & 0xFF;
+
+  return abs(exponentX - exponentY) + 1;
 }
 
 /******************************************************
@@ -839,10 +1235,10 @@ void sla(CPU *cpu, FILE *output)
   printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void divv(CPU *cpu, FILE *output)
+void divv(System *system, FILE *output)
 {
   // Fetch operands
-  const uint32_t ir = cpu->registers[IR];
+  const uint32_t ir = system->cpu.registers[IR];
 
   const uint8_t z = (ir >> 21) & 0x1F;
   const uint8_t x = (ir >> 16) & 0x1F;
@@ -850,32 +1246,32 @@ void divv(CPU *cpu, FILE *output)
   const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const uint32_t valueX = cpu->registers[x];
-  const uint32_t valueY = cpu->registers[y];
+  const uint32_t valueX = system->cpu.registers[x];
+  const uint32_t valueY = system->cpu.registers[y];
 
   if (valueY != 0)
   {
     if (z != 0)
-      cpu->registers[z] = valueX / valueY;
+      system->cpu.registers[z] = valueX / valueY;
 
     if (l != 0)
-      cpu->registers[l] = valueX % valueY;
+      system->cpu.registers[l] = valueX % valueY;
 
-    if (cpu->registers[z] == 0)
-      cpu->registers[SR] |= ZN_FLAG;
+    if (system->cpu.registers[z] == 0)
+      system->cpu.registers[SR] |= ZN_FLAG;
     else
-      cpu->registers[SR] &= ~ZN_FLAG;
+      system->cpu.registers[SR] &= ~ZN_FLAG;
 
-    if (cpu->registers[l] != 0)
-      cpu->registers[SR] |= CY_FLAG;
+    if (system->cpu.registers[l] != 0)
+      system->cpu.registers[SR] |= CY_FLAG;
     else
-      cpu->registers[SR] &= ~CY_FLAG;
+      system->cpu.registers[SR] &= ~CY_FLAG;
   }
 
   if (valueY == 0)
-    cpu->registers[SR] |= ZD_FLAG;
+    system->cpu.registers[SR] |= ZD_FLAG;
   else
-    cpu->registers[SR] &= ~ZD_FLAG;
+    system->cpu.registers[SR] &= ~ZD_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -883,10 +1279,13 @@ void divv(CPU *cpu, FILE *output)
 
   sprintf(instruction, "div %s,%s,%s,%s",
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
+  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), system->cpu.registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), system->cpu.registers[z], system->cpu.registers[SR]);
 
   // Output
-  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
+
+  if (valueY == 0)
+    handleDivideByZero(system, output);
 }
 
 void srl(CPU *cpu, FILE *output)
@@ -935,10 +1334,10 @@ void srl(CPU *cpu, FILE *output)
   printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
 }
 
-void divs(CPU *cpu, FILE *output)
+void divs(System *system, FILE *output)
 {
   // Fetch operands
-  const uint32_t ir = cpu->registers[IR];
+  const uint32_t ir = system->cpu.registers[IR];
 
   const uint8_t z = (ir >> 21) & 0x1F;
   const uint8_t x = (ir >> 16) & 0x1F;
@@ -946,32 +1345,32 @@ void divs(CPU *cpu, FILE *output)
   const uint8_t l = ir & 0x1F;
 
   // Execution of behavior
-  const int32_t valueX = cpu->registers[x];
-  const int32_t valueY = cpu->registers[y];
+  const int32_t valueX = system->cpu.registers[x];
+  const int32_t valueY = system->cpu.registers[y];
 
   if (valueY != 0)
   {
     if (l != 0)
-      cpu->registers[l] = valueX % valueY;
+      system->cpu.registers[l] = valueX % valueY;
 
     if (z != 0)
-      cpu->registers[z] = valueX / valueY;
+      system->cpu.registers[z] = valueX / valueY;
 
-    if (cpu->registers[z] == 0)
-      cpu->registers[SR] |= ZN_FLAG;
+    if (system->cpu.registers[z] == 0)
+      system->cpu.registers[SR] |= ZN_FLAG;
     else
-      cpu->registers[SR] &= ~ZN_FLAG;
+      system->cpu.registers[SR] &= ~ZN_FLAG;
 
-    if (cpu->registers[l] != 0)
-      cpu->registers[SR] |= OV_FLAG;
+    if (system->cpu.registers[l] != 0)
+      system->cpu.registers[SR] |= OV_FLAG;
     else
-      cpu->registers[SR] &= ~OV_FLAG;
+      system->cpu.registers[SR] &= ~OV_FLAG;
   }
 
   if (valueY == 0)
-    cpu->registers[SR] |= ZD_FLAG;
+    system->cpu.registers[SR] |= ZD_FLAG;
   else
-    cpu->registers[SR] &= ~ZD_FLAG;
+    system->cpu.registers[SR] &= ~ZD_FLAG;
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -979,10 +1378,13 @@ void divs(CPU *cpu, FILE *output)
 
   sprintf(instruction, "divs %s,%s,%s,%s",
           formatRegisterName(l, true), formatRegisterName(z, true), formatRegisterName(x, true), formatRegisterName(y, true));
-  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), cpu->registers[z], cpu->registers[SR]);
+  sprintf(additionalInfo, "%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X", formatRegisterName(l, false), formatRegisterName(x, false), formatRegisterName(y, false), system->cpu.registers[l], formatRegisterName(z, false), formatRegisterName(x, false), formatRegisterName(y, false), system->cpu.registers[z], system->cpu.registers[SR]);
 
   // Output
-  printInstruction(cpu->registers[PC], output, instruction, additionalInfo);
+  printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
+
+  if (valueY == 0)
+    handleDivideByZero(system, output);
 }
 
 void sra(CPU *cpu, FILE *output)
@@ -1883,8 +2285,32 @@ void l8(System *system, FILE *output)
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? system->cpu.registers[x] + i : i;
 
-  if (z != 0 && memoryAddress < (NUM_REGISTERS * 1024))
-    system->cpu.registers[z] = system->memory[memoryAddress];
+  if (z != 0)
+  {
+    switch (memoryAddress)
+    {
+    case TERMINAL_IN_ADDRESS:
+      system->cpu.registers[z] = (system->terminal.registers >> 8) & 0x000000FF;
+      break;
+    case FPU_REGISTER_X_ADDR:
+      system->cpu.registers[z] = system->fpu.registers.x.u;
+      break;
+    case FPU_REGISTER_Y_ADDR:
+      system->cpu.registers[z] = system->fpu.registers.y.u;
+      break;
+    case FPU_REGISTER_Z_ADDR:
+      system->cpu.registers[z] = system->fpu.registers.z.u;
+      break;
+    case FPU_REGISTER_CONTROL_ADDR:
+      system->cpu.registers[z] = system->fpu.registers.control;
+      break;
+    default:
+      if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
+        system->cpu.registers[z] = system->fpu.registers.control;
+      else if (memoryAddress < (NUM_REGISTERS * 1024))
+        system->cpu.registers[z] = system->memory[memoryAddress];
+    }
+  }
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1936,8 +2362,29 @@ void l32(System *system, FILE *output)
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 2) : i << 2;
 
-  if (z != 0 && memoryAddress < (NUM_REGISTERS * 1024))
-    system->cpu.registers[z] = readMemory32(system, memoryAddress);
+  if (z != 0)
+  {
+    switch (memoryAddress)
+    {
+    case FPU_REGISTER_X_ADDR:
+      system->cpu.registers[z] = system->fpu.registers.x.u;
+      break;
+    case FPU_REGISTER_Y_ADDR:
+      system->cpu.registers[z] = system->fpu.registers.y.u;
+      break;
+    case FPU_REGISTER_Z_ADDR:
+      system->cpu.registers[z] = system->fpu.registers.z.u;
+      break;
+    case FPU_REGISTER_CONTROL_ADDR:
+      system->cpu.registers[z] = system->fpu.registers.control;
+      break;
+    default:
+      if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
+        system->cpu.registers[z] = system->fpu.registers.control;
+      else if (memoryAddress < (NUM_REGISTERS * 1024))
+        system->cpu.registers[z] = readMemory32(system, memoryAddress);
+    }
+  }
 
   // Instruction formatting
   char instruction[30] = {0};
@@ -1961,16 +2408,49 @@ void s8(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? system->cpu.registers[x] + i : i;
+  const bool fpuControlST = getFPUControlSTField(&system->fpu);
+  const uint8_t valueRegisterZ = system->cpu.registers[z];
 
-  if (memoryAddress < (NUM_REGISTERS * 1024))
-    system->memory[memoryAddress] = system->cpu.registers[z];
+  switch (memoryAddress)
+  {
+  case TERMINAL_OUT_ADDRESS:
+    system->terminal.registers &= 0xFFFFFF00; // CLEAN OUT
+    system->terminal.registers |= valueRegisterZ;
+
+    addToBuffer(&system->terminal.buffer, valueRegisterZ);
+    break;
+  case FPU_REGISTER_X_ADDR:
+    system->fpu.registers.x.f = (float)valueRegisterZ;
+    system->fpu.registers.x.u = valueRegisterZ;
+    break;
+  case FPU_REGISTER_Y_ADDR:
+    system->fpu.registers.y.f = (float)valueRegisterZ;
+    system->fpu.registers.y.u = valueRegisterZ;
+    break;
+  case FPU_REGISTER_Z_ADDR:
+    system->fpu.registers.z.f = (float)valueRegisterZ;
+    system->fpu.registers.z.u = valueRegisterZ;
+    break;
+  case FPU_REGISTER_CONTROL_ADDR:
+    system->fpu.registers.control = valueRegisterZ;
+    setFPUControlSTField(&system->fpu, fpuControlST);
+    break;
+  default:
+    if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
+    {
+      system->fpu.registers.control = valueRegisterZ;
+      setFPUControlSTField(&system->fpu, fpuControlST);
+    }
+    else if (memoryAddress < (NUM_REGISTERS * 1024))
+      system->memory[memoryAddress] = valueRegisterZ;
+  }
 
   // Instruction formatting
   char instruction[50] = {0};
   char additionalInfo[200] = {0};
 
   sprintf(instruction, "s8 [%s%s%i],%s", formatRegisterName(x, true), (i >= 0) ? ("+") : (""), i, formatRegisterName(z, true));
-  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%02X", memoryAddress, formatRegisterName(z, false), system->cpu.registers[z]);
+  sprintf(additionalInfo, "MEM[0x%08X]=%s=0x%02X", memoryAddress, formatRegisterName(z, false), valueRegisterZ);
 
   // Output
   printInstruction(system->cpu.registers[PC], output, instruction, additionalInfo);
@@ -2015,11 +2495,31 @@ void s32(System *system, FILE *output)
 
   // Execution of behavior
   const uint32_t memoryAddress = (x != 0) ? ((system->cpu.registers[x] + i) << 2) : i << 2;
-  if (memoryAddress == WATCHDOG_ADDR)
-    system->watchdog.registers = system->cpu.registers[z];
-  else
+
+  switch (memoryAddress)
   {
-    if (memoryAddress < (NUM_REGISTERS * 1024))
+  case WATCHDOG_ADDR:
+    system->watchdog.registers = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_X_ADDR:
+    system->fpu.registers.x.f = (float)system->cpu.registers[z];
+    system->fpu.registers.x.u = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_Y_ADDR:
+    system->fpu.registers.y.f = (float)system->cpu.registers[z];
+    system->fpu.registers.y.u = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_Z_ADDR:
+    system->fpu.registers.z.f = (float)system->cpu.registers[z];
+    system->fpu.registers.z.u = system->cpu.registers[z];
+    break;
+  case FPU_REGISTER_CONTROL_ADDR:
+    system->fpu.registers.control = system->cpu.registers[z];
+    break;
+  default:
+    if (memoryAddress == FPU_REGISTER_CONTROL_ADDR_OTHER)
+      system->fpu.registers.control = system->cpu.registers[z];
+    else if (memoryAddress < (NUM_REGISTERS * 1024))
     {
       system->memory[memoryAddress + 0] = (system->cpu.registers[z] >> 24) & 0xFF;
       system->memory[memoryAddress + 1] = (system->cpu.registers[z] >> 16) & 0xFF;
@@ -2386,10 +2886,12 @@ void unknownInstruction(System *system, FILE *output)
 
 void handlePrepareForISR(System *system)
 {
-  system->memory[system->cpu.registers[SP] + 0] = ((system->cpu.registers[PC] + 4) >> 24) & 0xFF;
-  system->memory[system->cpu.registers[SP] + 1] = ((system->cpu.registers[PC] + 4) >> 16) & 0xFF;
-  system->memory[system->cpu.registers[SP] + 2] = ((system->cpu.registers[PC] + 4) >> 8) & 0xFF;
-  system->memory[system->cpu.registers[SP] + 3] = (system->cpu.registers[PC] + 4) & 0xFF;
+  const uint32_t pc = system->control.pcAlreadyIncremented ? system->cpu.registers[PC] : system->cpu.registers[PC] + 4;
+
+  system->memory[system->cpu.registers[SP] + 0] = (pc >> 24) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 1] = (pc >> 16) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 2] = (pc >> 8) & 0xFF;
+  system->memory[system->cpu.registers[SP] + 3] = pc & 0xFF;
   system->cpu.registers[SP] -= 4;
 
   system->memory[system->cpu.registers[SP] + 0] = (system->cpu.registers[CR] >> 24) & 0xFF;
@@ -2407,25 +2909,23 @@ void handlePrepareForISR(System *system)
 
 void handleDivideByZero(System *system, FILE *output)
 {
-  system->control.pcAlreadyIncremented = true;
-  handlePrepareForISR(system);
 
-  system->cpu.registers[SR] |= ZD_FLAG;
   if (isIESet(&system->cpu))
   {
-    system->cpu.registers[SR] |= ZD_FLAG;
+    handlePrepareForISR(system);
+    system->control.pcAlreadyIncremented = true;
     system->cpu.registers[CR] = 0;
     system->cpu.registers[IPC] = system->cpu.registers[PC];
     system->cpu.registers[PC] = DIVIDE_BY_ZERO_ADDR;
-  }
 
-  printInterruptMessage(DIVIDE_BY_ZERO_ADDR, output);
+    printInterruptMessage(DIVIDE_BY_ZERO_ADDR, output);
+  }
 }
 
 void handleInvalidInstruction(System *system, FILE *output)
 {
-  system->control.pcAlreadyIncremented = true;
   handlePrepareForISR(system);
+  system->control.pcAlreadyIncremented = true;
 
   system->cpu.registers[CR] = (system->cpu.registers[IR] >> 26) & 0x3F;
   system->cpu.registers[IPC] = system->cpu.registers[PC];
