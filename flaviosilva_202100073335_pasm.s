@@ -31,6 +31,10 @@
   convertIntToAscii:
     mov r4, charNumber
     s8 [r4], r3
+    l8 r3, [r4]
+
+    // WRITE TO TERMINAL
+    s8 [r2], r3
 
     mov sr, 0
     ret
