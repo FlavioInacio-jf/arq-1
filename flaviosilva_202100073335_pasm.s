@@ -33,9 +33,6 @@
     s8 [r4], r3
     l8 r3, [r4]
 
-    // WRITE TO TERMINAL
-    s8 [r2], r3
-
     mov sr, 0
     ret
   writeTerminal:
@@ -43,7 +40,7 @@
     call convertIntToAscii
 
     // WRITE TO TERMINAL
-    s8 [r2], r4
+    s8 [r2], r3
 
     // ADD SPACE EVERY 4 BYTES
     mov sr, 0
@@ -88,7 +85,6 @@
     cmp r14, r12
     bgt 2
     mov r12, r11
-
 
     addi r14, r14, 1
 
