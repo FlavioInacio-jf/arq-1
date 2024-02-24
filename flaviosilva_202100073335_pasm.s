@@ -18,10 +18,10 @@
     l8 r3, [r1]
     s8 [r10], r3
 
-    call writeTerminal
-
     addi r10, r10, 1
     addi r11, r11, 1
+
+    call writeTerminal
 
     // REPEAT THE INTERATION
     bun -8
@@ -31,7 +31,7 @@
   convertIntToAscii:
     mov r4, charNumber
     s8 [r4], r3
-    
+
     mov sr, 0
     ret
   writeTerminal:
