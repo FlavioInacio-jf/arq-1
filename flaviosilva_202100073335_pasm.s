@@ -4,113 +4,7 @@
 		bun main
 		.align 5
   readTerminal:
-    // R10 = [numbers] (ARRAY POINTER)
-    mov r10, numbers
-
-    // R11 = [orderedNumbers] (ARRAY POINTER)
-    mov r11, orderedNumbers
-
-    // R12 = 0 (COUNTER)
-    mov r12, 0
-
-    // START OF WHILE
-    cmpi r12, 400
-    beq 8
-
-    // R3 = 1 BYTE FROM TERMINAL
-    l8 r3, [r1]
-    s8 [r10], r3
-
-    // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
-    call convertStringToNumber
-    s8 [r11], r4
-
-    addi r10, r10, 1
-    addi r11, r11, 1
-    addi r12, r12, 1
-
-    // REPEAT THE INTERATION
-    bun -10
-
-    mov sr, 0
-    ret
-  convertStringToNumber:
-    // COMPARING WITH '\0'
-    cmpi r3, 0
-    beq 39
-
-    // COMPARING WITH '0'
-    cmpi r3, 48
-    bne 2
-    mov r4, 0
-    // BREAK
-    bun 35
-
-    // COMPARING WITH '1'
-    cmpi r3, 49
-    bne 2
-    mov r4, 1
-    // BREAK
-    bun 31
-
-    // COMPARING WITH '2'
-    cmpi r3, 50
-    bne 2
-    mov r4, 2
-    // BREAK
-    bun 27
-
-    // COMPARING WITH '3'
-    cmpi r3, 51
-    bne 2
-    mov r4, 3
-    // BREAK
-    bun 23
-
-    // COMPARING WITH '4'
-    cmpi r3, 52
-    bne 2
-    mov r4, 4
-    // BREAK
-    bun 19
-
-    // COMPARING WITH '5'
-    cmpi r3, 53
-    bne 2
-    mov r4, 5
-    // BREAK
-    bun 15
-
-    // COMPARING WITH '6'
-    cmpi r3, 54
-    bne 2
-    mov r4, 6
-    // BREAK
-    bun 11
-
-    // COMPARING WITH '7'
-    cmpi r3, 55
-    bne 2
-    mov r4, 7
-    // BREAK
-    bun 7
-
-    // COMPARING WITH '8'
-    cmpi r3, 56
-    bne 2
-    mov r4, 8
-    // BREAK
-    bun 3
-
-    // COMPARING WITH '9'
-    cmpi r3, 57
-    bne 1
-    mov r4, 9
-
-    mov sr, 0
-    ret
-  printf:
-    // R10 = [numbers] (ARRAY POINTER)
+    // R10 = numbers (ARRAY POINTER)
     mov r10, numbers
 
     // R11 = 0 (COUNTER)
@@ -118,28 +12,112 @@
 
     // START OF WHILE
     cmpi r11, 400
-    beq 12
+    beq 6
 
-    // READING BYTE FROM ARRAY
-    l8 r3, [r10]
+    // R3 = 1 BYTE FROM TERMINAL
+    l8 r3, [r1]
+    s8 [r10], r3
 
-    // WRITE TO TERMINAL
-    s8 [r2], r3
+    call writeTerminal
 
     addi r10, r10, 1
     addi r11, r11, 1
+
+    // REPEAT THE INTERATION
+    bun -8
+
+    mov sr, 0
+    ret
+  convertIntToAscii:
+    // COMPARING WITH '\0'
+    cmpi r3, 0
+    beq 39
+
+    // SET '0' IN ASCII
+    cmpi r3, 0
+    bne 2
+    mov r4, 48
+    // BREAK
+    bun 35
+
+    // SET '1' IN ASCII
+    cmpi r3, 1
+    bne 2
+    mov r4, 49
+    // BREAK
+    bun 31
+
+    // SET '2' IN ASCII
+    cmpi r3, 2
+    bne 2
+    mov r4, 50
+    // BREAK
+    bun 27
+
+    // SET '3' IN ASCII
+    cmpi r3, 3
+    bne 2
+    mov r4, 51
+    // BREAK
+    bun 23
+
+    // SET '4' IN ASCII
+    cmpi r3, 4
+    bne 2
+    mov r4, 52
+    // BREAK
+    bun 19
+
+    // SET '5' IN ASCII
+    cmpi r3, 5
+    bne 2
+    mov r4, 53
+    // BREAK
+    bun 15
+
+    // SET '6' IN ASCII
+    cmpi r3, 6
+    bne 2
+    mov r4, 54
+    // BREAK
+    bun 11
+
+    // SET '7' IN ASCII
+    cmpi r3, 7
+    bne 2
+    mov r4, 55
+    // BREAK
+    bun 7
+
+    // SET '8' IN ASCII
+    cmpi r3, 8
+    bne 2
+    mov r4, 56
+    // BREAK
+    bun 3
+
+    // SET '9' IN ASCII
+    cmpi r3, 9
+    bne 1
+    mov r4, 57
+
+    mov sr, 0
+    ret
+  writeTerminal:
+    // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
+    call convertIntToAscii
+
+    // WRITE TO TERMINAL
+    s8 [r2], r4
 
     // ADD SPACE EVERY 4 BYTES
     mov sr, 0
     modi r12, r11, 4
     cmpi r12, 0
     bne 3
-    mov r3, space
-    l8 r3, [r3]
-    s8 [r2], r3
-
-    // REPEAT THE INTERATION
-    bun -14
+    mov r4, space
+    l8 r4, [r4]
+    s8 [r2], r4
 
     mov sr, 0
     ret
@@ -161,8 +139,8 @@
     mov r11, 0
 
     // WHILE
-    cmp r10, 100
-    beq x
+    cmpi r10, 100
+    beq 2
     // I LESS
     l32 r12, [numbers]
 
@@ -170,16 +148,16 @@
     mov r14, 0
     addi r14, r10, 1
     cmp r14, r10
-    beq x
+    beq 2
 
     cmp r14, r12
-    bgt x
+    bgt 2
     mov r12, r11
-    
+
 
     addi r14, r14, 1
 
-    addi r11, 1
+    addi r11, r11, 1
 
     // REPEAT THE INTERATION
     bun -14
@@ -201,18 +179,14 @@
     call printHeader
 
     call readTerminal
-    call printf
 
     // PRINT HEADER SORTED NUMBERS
     mov r10, headerOutput
     call printHeader
 
-    call orderNumbers
 		int 0
 .data
 	numbers:
-    .fill 100, 4, -1
-  orderedNumbers:
     .fill 100, 4, -1
 	terminalIn:
     .4byte 0x8888888A
