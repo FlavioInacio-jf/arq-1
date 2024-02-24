@@ -128,6 +128,6 @@
   headerInput:
     .asciz "Input numbers:\n"
   headerOutput:
-    .asciz "Sorted numbers:\n"
+    .asciz "\nSorted numbers:\n"
   space:
     .asciz " "
