@@ -29,78 +29,9 @@
     mov sr, 0
     ret
   convertIntToAscii:
-    // COMPARING WITH '\0'
-    cmpi r3, 0
-    beq 39
-
-    // SET '0' IN ASCII
-    cmpi r3, 0
-    bne 2
-    mov r4, 48
-    // BREAK
-    bun 35
-
-    // SET '1' IN ASCII
-    cmpi r3, 1
-    bne 2
-    mov r4, 49
-    // BREAK
-    bun 31
-
-    // SET '2' IN ASCII
-    cmpi r3, 2
-    bne 2
-    mov r4, 50
-    // BREAK
-    bun 27
-
-    // SET '3' IN ASCII
-    cmpi r3, 3
-    bne 2
-    mov r4, 51
-    // BREAK
-    bun 23
-
-    // SET '4' IN ASCII
-    cmpi r3, 4
-    bne 2
-    mov r4, 52
-    // BREAK
-    bun 19
-
-    // SET '5' IN ASCII
-    cmpi r3, 5
-    bne 2
-    mov r4, 53
-    // BREAK
-    bun 15
-
-    // SET '6' IN ASCII
-    cmpi r3, 6
-    bne 2
-    mov r4, 54
-    // BREAK
-    bun 11
-
-    // SET '7' IN ASCII
-    cmpi r3, 7
-    bne 2
-    mov r4, 55
-    // BREAK
-    bun 7
-
-    // SET '8' IN ASCII
-    cmpi r3, 8
-    bne 2
-    mov r4, 56
-    // BREAK
-    bun 3
-
-    // SET '9' IN ASCII
-    cmpi r3, 9
-    bne 1
-    mov r4, 57
-
+    mov r4, charNumber
+    s8 [r4], r3
+    
     mov sr, 0
     ret
   writeTerminal:
@@ -192,6 +123,8 @@
     .4byte 0x8888888A
   terminalOut:
     .4byte 0x8888888B
+  charNumber:
+    .asciz "0"
   headerInput:
     .asciz "Input numbers:\n"
   headerOutput:
