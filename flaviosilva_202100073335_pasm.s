@@ -12,7 +12,7 @@
 
     // START OF WHILE
     cmpi r11, 400
-    beq 6
+    beq 5
 
     // R3 = 1 BYTE FROM TERMINAL
     l8 r3, [r1]
@@ -21,55 +21,60 @@
     addi r10, r10, 1
     addi r11, r11, 1
 
-    call writeTerminal
-
     // REPEAT THE INTERATION
-    bun -8
+    bun -7
 
     mov sr, 0
     ret
   convertNumberToAscii:
-    call cleanBuffer
-    mov r4, buffer
     // DIVIDE THE NUMBER BY 10
     mov r8, 10
-
-    //GETTING THE DIGIT 0
-    mov r9, zero
-    l8 r12, [r9]
 
     // START OF WHILE
     // DIVIDE THE NUMBER BY 10, R6 CONTAINS THE WHOLE PART, R5 THE REMAINDER
     div r5, r6, r3, r8
-    // CHECKS IF THE INTEGER PART IS ZERO (END OF CONVERSION)
-    cmpi r6, 0
-    beq 5
 
     // CONVERTS THE DIGIT TO ASCII BY ADDING THE ASCII VALUE OF '0'
-    add r7, r5, r12
+    addi r7, r5, 48
     // STORE THE ASCII DIGIT IN THE BUFFER
-    s8 [r4], r7
+    push r4
+
+    // CHECKS IF THE INTEGER PART IS ZERO (END OF CONVERSION)
+    cmpi r6, 0
+    beq 3
 
     addi r4, r4, 1
     addi r3, r6, 0
     bun -8
 
+    // ADD NUMBER IN BUFFER
+    // CLEAN BUFFER
+    mov r4, buffer
+    mov r5, 0
+    pop r4
+    s8 [r4], r5
+
     mov sr, 0
     ret
   writeTerminal:
-    call convertNumberToAscii
+    // R10 = numbers (ARRAY POINTER)
+    mov r10, numbers
+
+    // START OF WHILE
+    mov r11, 0
+    cmpi r11, 100
+    beq 15
+
+    // READ NUMBER FROM ARRAY
+    l32 r3, [r10]
 
     // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
+    call convertNumberToAscii
     mov r4, buffer
     l8 r3, [r4]
-    // Comparando com '\0'
-    cmpi r3, 0
-    beq 3
 
     // WRITE TO TERMINAL
     s8 [r2], r3
-    addi r4, r4, 1
-    bun -6
 
     // ADD SPACE EVERY 4 BYTES
     mov sr, 0
@@ -80,12 +85,13 @@
     l8 r4, [r4]
     s8 [r2], r4
 
+    addi r10, r10, 1
+    addi r11, r11, 1
+
+    // REPEAT THE INTERATION
+    bun -17
+
     mov sr, 0
-    ret
-  cleanBuffer:
-    mov r4, buffer
-    mov r5, 0
-    s8 [r4], r5
     ret
   printHeader:
     l8 r11, [r10]
@@ -142,12 +148,13 @@
     // PRINT HEADER INPUT
     mov r10, headerInput
     call printHeader
-
     call readTerminal
+    call writeTerminal
 
     // PRINT HEADER SORTED NUMBERS
     mov r10, headerOutput
     call printHeader
+    call writeTerminal
 
 		int 0
 .data
@@ -157,10 +164,8 @@
     .4byte 0x8888888A
   terminalOut:
     .4byte 0x8888888B
-  zero:
-    .asciz "0"
   buffer:
-    .zero 1
+    .zero 4
   headerInput:
     .asciz "Input numbers:\n"
   headerOutput:
