@@ -50,7 +50,7 @@
     // CONVERTS THE DIGIT TO ASCII BY ADDING THE ASCII VALUE OF '0'
     add r7, r5, r12
     // STORE THE ASCII DIGIT IN THE BUFFER
-    s8 [buffer], r7
+    s8 [r4], r7
 
     addi r4, r4, 1
     addi r3, r6, 0
@@ -64,8 +64,14 @@
     // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
     mov r4, buffer
     l8 r3, [r4]
+    // Comparando com '\0'
+    cmpi r3, 0
+    beq 3
+
     // WRITE TO TERMINAL
     s8 [r2], r3
+    addi r4, r4, 1
+    bun -6
 
     // ADD SPACE EVERY 4 BYTES
     mov sr, 0
