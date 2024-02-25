@@ -38,8 +38,6 @@
     mov r9, zero
     l8 r12, [r9]
 
-    mov r3, 256
-
     // START OF WHILE
     // DIVIDE THE NUMBER BY 10, R6 CONTAINS THE WHOLE PART, R5 THE REMAINDER
     div r5, r6, r3, r8
