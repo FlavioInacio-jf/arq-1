@@ -28,17 +28,42 @@
 
     mov sr, 0
     ret
-  convertIntToAscii:
-    mov r4, charNumber
-    l8 r5, [r4]
-    add r3, r5, r3
+  convertNumberToAscii:
+    call cleanBuffer
+    mov r4, buffer
+    // DIVIDE THE NUMBER BY 10
+    mov r8, 10
+
+    //GETTING THE DIGIT 0
+    mov r9, zero
+    l8 r12, [r9]
+
+    mov r3, 256
+
+    // START OF WHILE
+    // DIVIDE THE NUMBER BY 10, R6 CONTAINS THE WHOLE PART, R5 THE REMAINDER
+    div r5, r6, r3, r8
+    // CHECKS IF THE INTEGER PART IS ZERO (END OF CONVERSION)
+    cmpi r6, 0
+    beq 5
+
+    // CONVERTS THE DIGIT TO ASCII BY ADDING THE ASCII VALUE OF '0'
+    add r7, r5, r12
+    // STORE THE ASCII DIGIT IN THE BUFFER
+    s8 [buffer], r7
+
+    addi r4, r4, 1
+    addi r3, r6, 0
+    bun -8
 
     mov sr, 0
     ret
   writeTerminal:
-    // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
-    call convertIntToAscii
+    call convertNumberToAscii
 
+    // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
+    mov r4, buffer
+    l8 r3, [r4]
     // WRITE TO TERMINAL
     s8 [r2], r3
 
@@ -52,6 +77,11 @@
     s8 [r2], r4
 
     mov sr, 0
+    ret
+  cleanBuffer:
+    mov r4, buffer
+    mov r5, 0
+    s8 [r4], r5
     ret
   printHeader:
     l8 r11, [r10]
@@ -123,8 +153,10 @@
     .4byte 0x8888888A
   terminalOut:
     .4byte 0x8888888B
-  charNumber:
+  zero:
     .asciz "0"
+  buffer:
+    .zero 1
   headerInput:
     .asciz "Input numbers:\n"
   headerOutput:
