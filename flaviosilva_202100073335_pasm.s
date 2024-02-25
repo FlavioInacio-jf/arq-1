@@ -62,7 +62,7 @@
 
     // START OF WHILE
     mov r11, 0
-    cmpi r11, 100
+    cmpi r11, 400
     beq 15
 
     // READ NUMBER FROM ARRAY
@@ -85,8 +85,8 @@
     l8 r4, [r4]
     s8 [r2], r4
 
-    addi r10, r10, 1
-    addi r11, r11, 1
+    addi r10, r10, 4
+    addi r11, r11, 4
 
     // REPEAT THE INTERATION
     bun -17
