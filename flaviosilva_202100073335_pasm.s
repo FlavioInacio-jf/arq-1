@@ -30,8 +30,8 @@
     ret
   convertIntToAscii:
     mov r4, charNumber
-    s8 [r4], r3
-    l8 r3, [r4]
+    l8 r5, [r4]
+    add r3, r5, r3
 
     mov sr, 0
     ret
