@@ -126,47 +126,51 @@
     // R3 = XP = ARRAY ELEMENT POINTER
     // R4 = XP = ELEMENT
 
-    // R5 = YP = ARRAY ELEMENT POINTER
-    // R6 = YP = ELEMENT
+    // R10 = YP = ARRAY ELEMENT POINTER
+    // R5 = YP = ELEMENT
 
-    // XP = YP
-    s32 [r3], R6
+
+    l32 r5, [R10]
+    l32 r4, [r3]
 
     // YP = XP
-    s32 [r5], r4
+    s32 [r10], r4
+
+    // XP = YP
+    s32 [r3], r5
 
     ret
-  orderNumbers:
-    // R10 = numbers (ARRAY POINTER)
+  findMinIndex:
+    // R7 = MIN INDEX = start
+    addi r7, r11, 0
+
+    // R8 = END ARRAY
+    mov r8, r10, 0
+    ret
+  selectionSort:
+    // R10 = HEAD ARRAY
     mov r10, numbers
     // 32-BIT ALIGNMENT
     divi r10, r10, 4
 
-    // I ARRAY
-    mov r11, 0
+    // R20 = TAIL ARRAY (100 * 4 BYTES)
+    addi r20, r10, 400
 
     // WHILE
-    cmpi r10, 100
-    beq 2
-    // I LESS
-    l32 r12, [numbers]
+    cmp r10, r20
+    beq 5
 
-    // WHILE
-    mov r14, 0
-    addi r14, r10, 1
-    cmp r14, r10
-    beq 2
+    // RETURN R7 = MIN INDEX
+    call findMinIndex(arr, i, n - 1);
 
-    cmp r14, r12
-    bgt 2
-    mov r12, r11
+    // SET R3 = MIN INDEX
+    addi r3, r7, 0
+    call swap
 
-    addi r14, r14, 1
-
-    addi r11, r11, 1
+    addi r10, r10, 1
 
     // REPEAT THE INTERATION
-    bun -14
+    bun -7
 
     mov sr, 0
     ret
@@ -186,7 +190,7 @@
     call readTerminal
     call writeTerminal
 
-    call orderNumbers
+    call selectionSort
 
     // PRINT HEADER SORTED NUMBERS
     mov r10, headerOutput
