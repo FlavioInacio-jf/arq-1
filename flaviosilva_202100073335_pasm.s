@@ -122,9 +122,25 @@
 
     mov sr, 0
     ret
+  swap:
+    // R3 = XP = ARRAY ELEMENT POINTER
+    // R4 = XP = ELEMENT
+
+    // R5 = YP = ARRAY ELEMENT POINTER
+    // R6 = YP = ELEMENT
+
+    // XP = YP
+    s32 [r3], R6
+
+    // YP = XP
+    s32 [r5], r4
+
+    ret
   orderNumbers:
-    // HEADER ARRAY
+    // R10 = numbers (ARRAY POINTER)
     mov r10, numbers
+    // 32-BIT ALIGNMENT
+    divi r10, r10, 4
 
     // I ARRAY
     mov r11, 0
@@ -169,6 +185,8 @@
     call printHeader
     call readTerminal
     call writeTerminal
+
+    call orderNumbers
 
     // PRINT HEADER SORTED NUMBERS
     mov r10, headerOutput
