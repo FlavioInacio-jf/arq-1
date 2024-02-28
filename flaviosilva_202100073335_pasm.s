@@ -159,7 +159,7 @@
     mov sr, 0
     cmp r15, r16
     bgt 1
-    addi r7, r8, 1
+    addi r7, r8, 0
 
     addi r8, r8, 1
 
