@@ -70,11 +70,13 @@
   writeTerminal:
     // R10 = numbers (ARRAY POINTER)
     mov r10, numbers
+    // 32-BIT ALIGNMENT
+    divi r10, r10, 4
 
     // START OF WHILE
     mov r11, 0
-    cmpi r11, 400
-    beq 20
+    cmpi r11, 100
+    beq 19
 
     // READ NUMBER FROM ARRAY
     l32 r3, [r10]
@@ -94,20 +96,19 @@
     addi r7, r7, -1
     bun -7
 
-    // ADD SPACE EVERY 4 BYTES
+    // ADD SPACE
     mov sr, 0
-    modi r12, r11, 4
-    cmpi r12, 0
-    bne 3
+    cmpi r11, 0
+    beq 3
     mov r4, space
     l8 r4, [r4]
     s8 [r2], r4
 
-    addi r10, r10, 4
-    addi r11, r11, 4
+    addi r10, r10, 1
+    addi r11, r11, 1
 
     // REPEAT THE INTERATION
-    bun -22
+    bun -21
 
     mov sr, 0
     ret
@@ -177,13 +178,13 @@
 		int 0
 .data
 	numbers:
-    .fill 100, 4, -1
+    .fill 100, 4, 0
 	terminalIn:
     .4byte 0x8888888A
   terminalOut:
     .4byte 0x8888888B
   buffer:
-    .zero 12
+    .fill 12, 1, 0
   headerInput:
     .asciz "Input numbers:\n"
   headerOutput:
