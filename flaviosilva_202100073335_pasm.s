@@ -30,29 +30,40 @@
     // DIVIDE THE NUMBER BY 10
     mov r8, 10
 
+    // DIGITS COUNTER
+    mov r9, 0
+
     // START OF WHILE
     // DIVIDE THE NUMBER BY 10, R6 CONTAINS THE WHOLE PART, R5 THE REMAINDER
     div r5, r6, r3, r8
 
     // CONVERTS THE DIGIT TO ASCII BY ADDING THE ASCII VALUE OF '0'
     addi r7, r5, 48
-    // STORE THE ASCII DIGIT IN THE BUFFER
-    push r4
+    push r7
+
+    addi r9, r9, 1
+    addi r3, r6, 0
 
     // CHECKS IF THE INTEGER PART IS ZERO (END OF CONVERSION)
     cmpi r6, 0
-    beq 3
+    beq 1
 
-    addi r4, r4, 1
-    addi r3, r6, 0
     bun -8
 
     // ADD NUMBER IN BUFFER
-    // CLEAN BUFFER
     mov r4, buffer
-    mov r5, 0
-    pop r4
-    s8 [r4], r5
+    // COPY DIGITS COUNTER
+    addi r7, r9, 0
+
+    cmpi r9, 0
+    beq 5
+
+    pop r3
+    s8 [r4], r3
+
+    addi r4, r4, 1
+    addi r9, r9, -1
+    beq -7
 
     mov sr, 0
     ret
@@ -63,7 +74,7 @@
     // START OF WHILE
     mov r11, 0
     cmpi r11, 400
-    beq 15
+    beq 20
 
     // READ NUMBER FROM ARRAY
     l32 r3, [r10]
@@ -71,10 +82,17 @@
     // CONFIGURE R4 TO RECEIVE THE CONVERTED NUMBER
     call convertNumberToAscii
     mov r4, buffer
+
+    cmpi r7, 0
+    beq 5
     l8 r3, [r4]
 
     // WRITE TO TERMINAL
     s8 [r2], r3
+
+    addi r4, r4, 1
+    addi r7, r7, -1
+    beq -7
 
     // ADD SPACE EVERY 4 BYTES
     mov sr, 0
@@ -89,7 +107,7 @@
     addi r11, r11, 4
 
     // REPEAT THE INTERATION
-    bun -17
+    bun -22
 
     mov sr, 0
     ret
@@ -165,7 +183,7 @@
   terminalOut:
     .4byte 0x8888888B
   buffer:
-    .zero 4
+    .zero 12
   headerInput:
     .asciz "Input numbers:\n"
   headerOutput:
