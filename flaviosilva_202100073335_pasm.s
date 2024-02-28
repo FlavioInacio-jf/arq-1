@@ -96,16 +96,16 @@
     addi r7, r7, -1
     bun -7
 
+    addi r10, r10, 1
+    addi r11, r11, 1
+
     // ADD SPACE
     mov sr, 0
-    cmpi r11, 0
+    cmpi r11, 100
     beq 3
     mov r4, space
     l8 r4, [r4]
     s8 [r2], r4
-
-    addi r10, r10, 1
-    addi r11, r11, 1
 
     // REPEAT THE INTERATION
     bun -21
