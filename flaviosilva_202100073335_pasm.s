@@ -174,8 +174,8 @@
     // 32-BIT ALIGNMENT
     divi r10, r10, 4
 
-    // R20 = TAIL ARRAY (100 * 4 BYTES)
-    addi r20, r10, 400
+    // R20 = TAIL ARRAY (100)
+    addi r20, r10, 100
 
     // WHILE
     cmp r10, r20
