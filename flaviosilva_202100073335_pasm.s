@@ -63,7 +63,7 @@
 
     addi r4, r4, 1
     addi r9, r9, -1
-    beq -7
+    bun -7
 
     mov sr, 0
     ret
@@ -92,7 +92,7 @@
 
     addi r4, r4, 1
     addi r7, r7, -1
-    beq -7
+    bun -7
 
     // ADD SPACE EVERY 4 BYTES
     mov sr, 0
