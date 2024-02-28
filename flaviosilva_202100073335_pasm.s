@@ -129,7 +129,6 @@
     // R10 = YP = ARRAY ELEMENT POINTER
     // R5 = YP = ELEMENT
 
-
     l32 r5, [r10]
     l32 r4, [r3]
 
@@ -155,7 +154,7 @@
     // arr[min_idx]
     l32 r16, [r7]
 
-    // arr[i] < arr[min_idx]
+    // arr[R8] < arr[R7]
     mov sr, 0
     cmp r15, r16
     bgt 1
