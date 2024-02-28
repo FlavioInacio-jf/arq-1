@@ -130,7 +130,7 @@
     // R5 = YP = ELEMENT
 
 
-    l32 r5, [R10]
+    l32 r5, [r10]
     l32 r4, [r3]
 
     // YP = XP
@@ -141,11 +141,32 @@
 
     ret
   findMinIndex:
-    // R7 = MIN INDEX = start
-    addi r7, r11, 0
+    mov sr, 0
 
-    // R8 = END ARRAY
-    mov r8, r10, 0
+    // R7 = MIN INDEX = start
+    addi r7, r10, 0
+    // R8 = I = START + 1
+    addi r8, r7, 1
+
+    cmp r8, r20
+    beq 8
+    // arr[i]
+    l32 r15, [r8]
+    // arr[min_idx]
+    l32 r16, [r7]
+
+    // arr[i] < arr[min_idx]
+    mov sr, 0
+    cmp r15, r16
+    bgt 1
+    addi r7, r8, 1
+
+    addi r8, r8, 1
+
+    // REPEAT THE INTERATION
+    bun -10
+
+    mov sr, 0
     ret
   selectionSort:
     // R10 = HEAD ARRAY
@@ -161,7 +182,7 @@
     beq 5
 
     // RETURN R7 = MIN INDEX
-    call findMinIndex(arr, i, n - 1);
+    call findMinIndex
 
     // SET R3 = MIN INDEX
     addi r3, r7, 0
