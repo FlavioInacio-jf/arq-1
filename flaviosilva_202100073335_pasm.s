@@ -178,19 +178,22 @@
 
     // WHILE
     cmp r10, r20
-    beq 5
+    beq 8
 
     // RETURN R7 = MIN INDEX
     call findMinIndex
 
     // SET R3 = MIN INDEX
     addi r3, r7, 0
+    mov sr, 0
+    cmp r3, r10
+    beq 1
     call swap
 
     addi r10, r10, 1
 
     // REPEAT THE INTERATION
-    bun -7
+    bun -10
 
     mov sr, 0
     ret
